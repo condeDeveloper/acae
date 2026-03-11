@@ -137,4 +137,133 @@ export default async function registrosRoutes(fastify: FastifyInstance) {
       return reply.code(200).send({ data: registros, total })
     }
   )
+
+  // GET /api/registros/:registroId — detalhe completo
+  fastify.get(
+    '/api/registros/:registroId',
+    { preHandler: [fastify.authenticate] },
+    async (request, reply) => {
+      const professor = request.professor
+      const { registroId } = request.params as { registroId: string }
+
+      const registro = await prisma.registroAluno.findFirst({
+        where: {
+          id: registroId,
+          turma: { professor_id: professor.id },
+        },
+      })
+      if (!registro) {
+        return reply.code(404).send({ error: 'Registro não encontrado' })
+      }
+
+      return reply.code(200).send({
+        id: registro.id,
+        periodo: registro.periodo,
+        objetivos: registro.objetivos,
+        atividades: registro.atividades,
+        mediacoes: registro.mediacoes,
+        ocorrencias: registro.ocorrencias,
+        bncc_refs: registro.bncc_refs,
+        aluno_id: registro.aluno_id,
+        turma_id: registro.turma_id,
+        created_at: registro.created_at,
+        updated_at: registro.updated_at,
+      })
+    }
+  )
+
+  // PATCH /api/registros/:registroId — atualiza registro
+  fastify.patch(
+    '/api/registros/:registroId',
+    {
+      preHandler: [fastify.authenticate],
+      schema: {
+        body: {
+          type: 'object',
+          properties: {
+            periodo:     { type: 'string', minLength: 1 },
+            objetivos:   { type: 'string', minLength: 10, maxLength: 5000 },
+            atividades:  { type: 'string', minLength: 10, maxLength: 5000 },
+            mediacoes:   { type: 'string', maxLength: 3000, nullable: true },
+            ocorrencias: { type: 'string', maxLength: 3000, nullable: true },
+            bncc_refs:   { type: 'array', items: { type: 'string' }, minItems: 1 },
+          },
+          additionalProperties: false,
+        },
+      },
+    },
+    async (request, reply) => {
+      const professor = request.professor
+      const { registroId } = request.params as { registroId: string }
+      const body = request.body as {
+        periodo?: string
+        objetivos?: string
+        atividades?: string
+        mediacoes?: string | null
+        ocorrencias?: string | null
+        bncc_refs?: string[]
+      }
+
+      const registro = await prisma.registroAluno.findFirst({
+        where: { id: registroId, turma: { professor_id: professor.id } },
+      })
+      if (!registro) {
+        return reply.code(404).send({ error: 'Registro não encontrado' })
+      }
+
+      // Conflito de período (só se mudar o período)
+      if (body.periodo && body.periodo !== registro.periodo) {
+        const conflito = await prisma.registroAluno.findUnique({
+          where: { aluno_id_periodo: { aluno_id: registro.aluno_id, periodo: body.periodo } },
+        })
+        if (conflito) {
+          return reply.code(409).send({ error: 'Já existe um registro para este aluno neste período' })
+        }
+      }
+
+      const updateData: Record<string, unknown> = {}
+      if (body.periodo !== undefined)     updateData.periodo     = body.periodo
+      if (body.objetivos !== undefined)   updateData.objetivos   = body.objetivos
+      if (body.atividades !== undefined)  updateData.atividades  = body.atividades
+      if (body.mediacoes !== undefined)   updateData.mediacoes   = body.mediacoes ?? null
+      if (body.ocorrencias !== undefined) updateData.ocorrencias = body.ocorrencias ?? null
+      if (body.bncc_refs !== undefined)   updateData.bncc_refs   = body.bncc_refs
+
+      const atualizado = await prisma.registroAluno.update({
+        where: { id: registroId },
+        data: updateData,
+      })
+
+      return reply.code(200).send({
+        id: atualizado.id,
+        periodo: atualizado.periodo,
+        objetivos: atualizado.objetivos,
+        atividades: atualizado.atividades,
+        mediacoes: atualizado.mediacoes,
+        ocorrencias: atualizado.ocorrencias,
+        bncc_refs: atualizado.bncc_refs,
+        updated_at: atualizado.updated_at,
+      })
+    }
+  )
+
+  // DELETE /api/registros/:registroId
+  fastify.delete(
+    '/api/registros/:registroId',
+    { preHandler: [fastify.authenticate] },
+    async (request, reply) => {
+      const professor = request.professor
+      const { registroId } = request.params as { registroId: string }
+
+      const registro = await prisma.registroAluno.findFirst({
+        where: { id: registroId, turma: { professor_id: professor.id } },
+      })
+      if (!registro) {
+        return reply.code(404).send({ error: 'Registro não encontrado' })
+      }
+
+      await prisma.registroAluno.delete({ where: { id: registroId } })
+      return reply.code(204).send()
+    }
+  )
 }

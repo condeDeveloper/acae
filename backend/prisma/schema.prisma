@@ -111,7 +111,7 @@ model Turma {
 model Aluno {
   id                        String      @id @default(uuid()) @db.Uuid
   nome                      String
-  data_nascimento           DateTime    @db.Date
+  data_nascimento           DateTime?   @db.Date
   necessidades_educacionais String?     @db.Text
   status                    StatusAluno @default(ativo)
 

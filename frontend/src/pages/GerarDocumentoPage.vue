@@ -136,11 +136,13 @@ const rascunho = ref<Rascunho | null>(null)
 const estaGerando = ref(false)
 const erroGeracao = ref('')
 
-const formularioValido = computed(() =>
-  !!form.value.tipo &&
-  !!form.value.aluno_id &&
-  form.value.bncc_refs.length > 0,
-)
+const precisaDeDatas = computed(() => form.value.tipo !== 'resumo_pedagogico')
+
+const formularioValido = computed(() => {
+  if (!form.value.tipo || !form.value.aluno_id || form.value.bncc_refs.length === 0) return false
+  if (precisaDeDatas.value && (!form.value.periodo_inicio || !form.value.periodo_fim)) return false
+  return true
+})
 
 const podeFinalizar = computed(() => !!rascunho.value && rascunho.value.status !== 'finalizado')
 
@@ -170,8 +172,13 @@ async function gerarDocumento() {
     const { data } = await api.post<{ rascunho: Rascunho }>('/api/documents/generate', payload)
     rascunho.value = data.rascunho
   } catch (err: unknown) {
-    const error = err as { response?: { data?: { error?: string } } }
-    erroGeracao.value = error?.response?.data?.error ?? 'Erro ao gerar documento. Tente novamente.'
+    const error = err as { response?: { data?: { error?: string; message?: string } } }
+    const msg = error?.response?.data?.message ?? error?.response?.data?.error ?? 'Erro ao gerar documento. Tente novamente.'
+    if (msg.includes('registros') || msg.includes('período')) {
+      erroGeracao.value = msg + ' Acesse a tela de Registros para cadastrar as atividades do aluno antes de gerar o documento.'
+    } else {
+      erroGeracao.value = msg
+    }
   } finally {
     estaGerando.value = false
   }

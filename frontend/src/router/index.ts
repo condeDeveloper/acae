@@ -21,6 +21,7 @@ const router = createRouter({
         { path: '', name: 'dashboard', redirect: '/turmas' },
         { path: 'turmas', name: 'turmas', component: () => import('@/pages/TurmasPage.vue') },
         { path: 'alunos', name: 'alunos', component: () => import('@/pages/AlunosPage.vue') },
+        { path: 'registros', name: 'registros', component: () => import('@/pages/RegistrosPage.vue'), meta: { requiresAuth: true } },
         { path: 'documentos', name: 'documentos', component: () => import('@/pages/DocumentosPage.vue'), meta: { requiresAuth: true } },
         { path: 'documentos/gerar', name: 'gerar-documento', component: () => import('@/pages/GerarDocumentoPage.vue'), meta: { requiresAuth: true } },
         { path: 'relatorio-individual', name: 'relatorio-individual', component: () => import('@/pages/RelatorioIndividualPage.vue'), meta: { requiresAuth: true } },

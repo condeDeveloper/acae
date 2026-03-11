@@ -16,7 +16,6 @@
         optionLabel="nome"
         optionValue="id"
         placeholder="Selecione uma turma"
-        @change="carregarAlunos"
         style="min-width: 280px"
       />
     </div>
@@ -104,7 +103,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import Button from 'primevue/button'
@@ -157,7 +156,6 @@ async function carregarTurmas() {
   turmas.value = data.data
   if (turmas.value.length > 0 && !turmaSelecionada.value) {
     turmaSelecionada.value = turmas.value[0].id
-    await carregarAlunos()
   }
 }
 
@@ -171,6 +169,10 @@ async function carregarAlunos() {
     loading.value = false
   }
 }
+
+watch(turmaSelecionada, () => {
+  carregarAlunos()
+})
 
 function abrirDialogNovo() {
   editando.value = null
@@ -220,20 +222,18 @@ async function salvar() {
   salvando.value = true
   try {
     if (editando.value) {
-      await api.patch(`/api/alunos/${editando.value.id}`, {
-        nome: form.value.nome,
-        necessidades_educacionais: form.value.necessidades_educacionais || null,
-      })
+      const patch: Record<string, string> = { nome: form.value.nome }
+      if (form.value.necessidades_educacionais.trim())
+        patch.necessidades_educacionais = form.value.necessidades_educacionais.trim()
+      await api.patch(`/api/alunos/${editando.value.id}`, patch)
       toast.add({ severity: 'success', summary: 'Aluno atualizado', life: 3000 })
     } else {
-      const dataNasc = form.value.data_nascimento
-        ? form.value.data_nascimento.toISOString().split('T')[0]
-        : null
-      await api.post(`/api/turmas/${form.value.turma_id}/alunos`, {
-        nome: form.value.nome,
-        data_nascimento: dataNasc,
-        necessidades_educacionais: form.value.necessidades_educacionais || null,
-      })
+      const payload: Record<string, string> = { nome: form.value.nome.trim() }
+      if (form.value.data_nascimento)
+        payload.data_nascimento = form.value.data_nascimento.toISOString().split('T')[0]
+      if (form.value.necessidades_educacionais.trim())
+        payload.necessidades_educacionais = form.value.necessidades_educacionais.trim()
+      await api.post(`/api/turmas/${form.value.turma_id}/alunos`, payload)
       toast.add({ severity: 'success', summary: 'Aluno adicionado', life: 3000 })
     }
     dialogVisible.value = false

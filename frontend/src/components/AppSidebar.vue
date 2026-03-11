@@ -34,6 +34,7 @@ const authStore = useAuthStore()
 const navItems = [
   { to: '/turmas', label: 'Turmas', icon: 'pi pi-users' },
   { to: '/alunos', label: 'Alunos', icon: 'pi pi-user' },
+  { to: '/registros', label: 'Registros', icon: 'pi pi-book' },
   { to: '/documentos/gerar', label: 'Gerar Documento', icon: 'pi pi-file-edit' },
   { to: '/documentos', label: 'Documentos', icon: 'pi pi-file' },
   { to: '/relatorio-individual', label: 'Relatório Individual', icon: 'pi pi-chart-bar' },

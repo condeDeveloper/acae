@@ -60,8 +60,13 @@ export const useRelatorioStore = defineStore('relatorio', () => {
       rascunho.value = data.rascunho
       etapa.value = 'revisao'
     } catch (err: unknown) {
-      const error = err as { response?: { data?: { error?: string } } }
-      erroGeracao.value = error?.response?.data?.error ?? 'Erro ao gerar relatório.'
+      const error = err as { response?: { data?: { error?: string; message?: string } } }
+      const msg = error?.response?.data?.message ?? error?.response?.data?.error ?? 'Erro ao gerar relatório.'
+      if (msg.includes('registros') || msg.includes('período')) {
+        erroGeracao.value = msg + ' Acesse a tela de Registros para cadastrar as atividades do aluno antes de gerar o relatório.'
+      } else {
+        erroGeracao.value = msg
+      }
     } finally {
       estaGerando.value = false
     }
@@ -69,8 +74,12 @@ export const useRelatorioStore = defineStore('relatorio', () => {
 
   async function autoSalvar(texto: string) {
     if (!rascunho.value) return
-    await api.patch(`/api/documents/rascunhos/${rascunho.value.id}`, { conteudo_editado: texto })
-    if (rascunho.value) rascunho.value.conteudo_editado = texto
+    try {
+      await api.patch(`/api/documents/rascunhos/${rascunho.value.id}`, { conteudo_editado: texto })
+      if (rascunho.value) rascunho.value.conteudo_editado = texto
+    } catch {
+      /* auto-save silencioso — não bloqueia o fluxo */
+    }
   }
 
   async function finalizar(conteudoFinal: string) {

@@ -78,11 +78,11 @@ export default async function alunosRoutes(fastify: FastifyInstance) {
       schema: {
         body: {
           type: 'object',
-          required: ['nome', 'data_nascimento'],
+          required: ['nome'],
           properties: {
             nome: { type: 'string', minLength: 2, maxLength: 200 },
-            data_nascimento: { type: 'string', format: 'date' },
-            necessidades_educacionais: { type: 'string', maxLength: 2000 },
+            data_nascimento: { type: 'string', format: 'date', nullable: true },
+            necessidades_educacionais: { type: 'string', maxLength: 2000, nullable: true },
           },
           additionalProperties: false,
         },
@@ -93,8 +93,8 @@ export default async function alunosRoutes(fastify: FastifyInstance) {
       const { turmaId } = request.params as { turmaId: string }
       const { nome, data_nascimento, necessidades_educacionais } = request.body as {
         nome: string
-        data_nascimento: string
-        necessidades_educacionais?: string
+        data_nascimento?: string | null
+        necessidades_educacionais?: string | null
       }
 
       // Verifica que a turma pertence ao professor
@@ -105,19 +105,25 @@ export default async function alunosRoutes(fastify: FastifyInstance) {
         return reply.code(403).send({ error: 'Turma não pertence ao professor autenticado' })
       }
 
-      // Valida data não futura
-      const nascimento = new Date(data_nascimento)
-      if (nascimento > new Date()) {
-        return reply.code(400).send({
-          error: 'Dados inválidos',
-          details: [{ field: 'data_nascimento', message: 'Data de nascimento não pode ser no futuro' }],
-        })
+      // Valida data não futura (apenas se fornecida)
+      let nascimentoDate: Date | null = null
+      if (data_nascimento) {
+        nascimentoDate = new Date(data_nascimento)
+        if (isNaN(nascimentoDate.getTime())) {
+          return reply.code(400).send({ error: 'Data de nascimento inválida' })
+        }
+        if (nascimentoDate > new Date()) {
+          return reply.code(400).send({
+            error: 'Dados inválidos',
+            details: [{ field: 'data_nascimento', message: 'Data de nascimento não pode ser no futuro' }],
+          })
+        }
       }
 
       const aluno = await prisma.aluno.create({
         data: {
           nome,
-          data_nascimento: nascimento,
+          ...(nascimentoDate ? { data_nascimento: nascimentoDate } : {}),
           necessidades_educacionais: necessidades_educacionais ?? null,
           turma_id: turmaId,
         },
@@ -144,7 +150,7 @@ export default async function alunosRoutes(fastify: FastifyInstance) {
         body: {
           type: 'object',
           properties: {
-            necessidades_educacionais: { type: 'string', maxLength: 2000 },
+            necessidades_educacionais: { type: 'string', maxLength: 2000, nullable: true },
             nome: { type: 'string', minLength: 2, maxLength: 200 },
           },
           additionalProperties: false,
@@ -154,7 +160,7 @@ export default async function alunosRoutes(fastify: FastifyInstance) {
     async (request, reply) => {
       const professor = request.professor
       const { alunoId } = request.params as { alunoId: string }
-      const updates = request.body as Record<string, string>
+      const body = request.body as { nome?: string; necessidades_educacionais?: string }
 
       // Verifica que o aluno pertence a uma turma do professor
       const aluno = await prisma.aluno.findFirst({
@@ -168,9 +174,14 @@ export default async function alunosRoutes(fastify: FastifyInstance) {
         return reply.code(404).send({ error: 'Aluno não encontrado' })
       }
 
+      const updateData: { nome?: string; necessidades_educacionais?: string | null } = {}
+      if (body.nome !== undefined) updateData.nome = body.nome
+      if (body.necessidades_educacionais !== undefined)
+        updateData.necessidades_educacionais = body.necessidades_educacionais || null
+
       const updated = await prisma.aluno.update({
         where: { id: alunoId },
-        data: updates,
+        data: updateData,
       })
 
       return reply.code(200).send({
@@ -179,7 +190,6 @@ export default async function alunosRoutes(fastify: FastifyInstance) {
         necessidades_educacionais: updated.necessidades_educacionais,
         status: updated.status,
         turma_id: updated.turma_id,
-        updated_at: updated.updated_at,
       })
     }
   )

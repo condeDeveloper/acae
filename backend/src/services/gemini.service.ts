@@ -26,11 +26,16 @@ export async function generateContent(prompt: string): Promise<string> {
     if (!text) throw new Error('Resposta vazia do Gemini')
     return text
   } catch (err: unknown) {
-    const error = err as Error
+    const error = err as Error & { status?: number }
     if (error.name === 'AbortError' || error.message?.includes('abort')) {
       const timeoutError = new Error('A geração demorou mais que o esperado. Tente novamente.')
       ;(timeoutError as Error & { statusCode: number }).statusCode = 504
       throw timeoutError
+    }
+    if (error.message?.includes('429') || error.message?.includes('RESOURCE_EXHAUSTED') || error.message?.includes('quota')) {
+      const quotaError = new Error('Cota da API de IA atingida. Aguarde alguns minutos e tente novamente.')
+      ;(quotaError as Error & { statusCode: number }).statusCode = 429
+      throw quotaError
     }
     const serviceError = new Error('Serviço de IA temporariamente indisponível.')
     ;(serviceError as Error & { statusCode: number }).statusCode = 503

@@ -16,15 +16,21 @@ api.interceptors.request.use(async (config) => {
 })
 
 // Response: handle common errors
+let isLoggingOut = false
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const status = error.response?.status
-    if (status === 401) {
-      // import lazily to avoid circular deps
-      const { useAuthStore } = await import('@/stores/auth')
-      const authStore = useAuthStore()
-      await authStore.logout()
+    if (status === 401 && !isLoggingOut) {
+      isLoggingOut = true
+      try {
+        // import lazily to avoid circular deps
+        const { useAuthStore } = await import('@/stores/auth')
+        const authStore = useAuthStore()
+        await authStore.logout()
+      } finally {
+        isLoggingOut = false
+      }
     }
     // Never log request/response body (may contain pedagogical data)
     return Promise.reject(error)
