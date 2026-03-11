@@ -10,10 +10,10 @@
 
 **Purpose**: Estrutura do projeto backend e configuração inicial
 
-- [ ] T001 Criar estrutura de diretórios do backend: `backend/prisma/`, `backend/src/routes/`, `backend/src/services/`, `backend/src/plugins/`, `backend/src/hooks/`
-- [ ] T002 Inicializar projeto Node.js 22 com Fastify 5, Prisma 6 e dependências per `specs/007-banco-de-dados/quickstart.md`
-- [ ] T003 [P] Criar `backend/.env` com `DATABASE_URL`, `DIRECT_URL` e `SUPABASE_JWT_SECRET` e adicionar `backend/.env` ao `.gitignore`
-- [ ] T004 [P] Criar `backend/.env.example` com placeholders para todas as variáveis obrigatórias
+- [X] T001 Criar estrutura de diretórios do backend: `backend/prisma/`, `backend/src/routes/`, `backend/src/services/`, `backend/src/plugins/`, `backend/src/hooks/`
+- [X] T002 Inicializar projeto Node.js 22 com Fastify 5, Prisma 6 e dependências per `specs/007-banco-de-dados/quickstart.md`
+- [X] T003 [P] Criar `backend/.env` com `DATABASE_URL`, `DIRECT_URL` e `SUPABASE_JWT_SECRET` e adicionar `backend/.env` ao `.gitignore`
+- [X] T004 [P] Criar `backend/.env.example` com placeholders para todas as variáveis obrigatórias
 
 ---
 
@@ -23,12 +23,12 @@
 
 **⚠️ CRÍTICO**: Fase 2 deve estar 100% completa antes de implementar qualquer rota.
 
-- [ ] T005 Criar `backend/prisma/schema.prisma` com os 10 modelos per `specs/007-banco-de-dados/data-model.md`: `Professor`, `Turma`, `Aluno`, `Grupo`, `GrupoAluno`, `CompetenciaBNCC`, `ContextoPedagogico`, `RegistroAluno`, `RascunhoDocumento`, `VersaoDocumento`, `ControleCotas`
+- [X] T005 Criar `backend/prisma/schema.prisma` com os 10 modelos per `specs/007-banco-de-dados/data-model.md`: `Professor`, `Turma`, `Aluno`, `Grupo`, `GrupoAluno`, `CompetenciaBNCC`, `ContextoPedagogico`, `RegistroAluno`, `RascunhoDocumento`, `VersaoDocumento`, `ControleCotas`
 - [ ] T006 Criar primeira migração Prisma: `npx prisma migrate dev --name init` gerando `backend/prisma/migrations/`
-- [ ] T007 Criar migração SQL adicional com CHECK constraint `cardinality(bncc_refs) >= 1` em `rascunhos_documento` e `registros_aluno` per Princípio III
-- [ ] T008 Criar migração SQL com trigger `BEFORE UPDATE OR DELETE` em `versoes_documento` rejeitando modificações (INSERT-ONLY) per Princípio V
-- [ ] T009 Criar `backend/prisma/seed.ts` com todas as competências BNCC da Educação Infantil (BNCC 2017 — EI01 a EI03, campos de experiência completos)
-- [ ] T010 Configurar Supabase Custom Access Token Hook via Dashboard para injetar claim `papel` no JWT (professor/coordenador)
+- [X] T007 Criar migração SQL adicional com CHECK constraint `cardinality(bncc_refs) >= 1` em `rascunhos_documento` e `registros_aluno` per Princípio III
+- [X] T008 Criar migração SQL com trigger `BEFORE UPDATE OR DELETE` em `versoes_documento` rejeitando modificações (INSERT-ONLY) per Princípio V
+- [X] T009 Criar `backend/prisma/seed.ts` com todas as competências BNCC da Educação Infantil (BNCC 2017 — EI01 a EI03, campos de experiência completos)
+- [X] T010 Configurar Supabase Custom Access Token Hook via Dashboard para injetar claim `papel` no JWT (professor/coordenador)
 
 **Checkpoint**: Schema criado, migrações aplicadas, seed pronto — user stories podem iniciar
 
@@ -40,11 +40,11 @@
 
 **Independent Test**: Criar dois professores com turmas distintas, logar como cada um e verificar que apenas suas próprias turmas aparecem. Logar como coordenador e verificar acesso irrestrito.
 
-- [ ] T011 [US1] Criar migração SQL com política RLS `CREATE POLICY professor_isolation ON turmas USING (professor_id = auth.uid())` em `backend/prisma/migrations/`
-- [ ] T012 [US1] Criar política RLS para `alunos` baseada em turma: `EXISTS (SELECT 1 FROM turmas WHERE turmas.id = alunos.turma_id AND turmas.professor_id = auth.uid())`
-- [ ] T013 [US1] Criar política RLS de bypass para coordenador em todas as tabelas: `(SELECT papel FROM professores WHERE id = auth.uid()) = 'coordenador'`
-- [ ] T014 [P] [US1] Criar `backend/src/plugins/auth.ts` com `@fastify/jwt` verificando `SUPABASE_JWT_SECRET` e decorator `fastify.authenticate`
-- [ ] T015 [P] [US1] Criar `backend/src/hooks/attach-professor.ts`: preHandler que extrai `JWT.sub` → busca professor no banco → annexa `req.professor`
+- [X] T011 [US1] Criar migração SQL com política RLS `CREATE POLICY professor_isolation ON turmas USING (professor_id = auth.uid())` em `backend/prisma/migrations/`
+- [X] T012 [US1] Criar política RLS para `alunos` baseada em turma: `EXISTS (SELECT 1 FROM turmas WHERE turmas.id = alunos.turma_id AND turmas.professor_id = auth.uid())`
+- [X] T013 [US1] Criar política RLS de bypass para coordenador em todas as tabelas: `(SELECT papel FROM professores WHERE id = auth.uid()) = 'coordenador'`
+- [X] T014 [P] [US1] Criar `backend/src/plugins/auth.ts` com `@fastify/jwt` verificando `SUPABASE_JWT_SECRET` e decorator `fastify.authenticate`
+- [X] T015 [P] [US1] Criar `backend/src/hooks/attach-professor.ts`: preHandler que extrai `JWT.sub` → busca professor no banco → annexa `req.professor`
 
 **Checkpoint**: US1 verificada — professor A não acessa dados do professor B
 
@@ -56,12 +56,12 @@
 
 **Independent Test**: Cadastrar aluno com necessidades educacionais, consultá-lo, atualizar uma informação e verificar que a atualização foi salva corretamente.
 
-- [ ] T016 [P] [US2] Implementar `GET /api/turmas` em `backend/src/routes/turmas.ts` per `specs/007-banco-de-dados/contracts/turmas.md`
-- [ ] T017 [P] [US2] Implementar `POST /api/turmas` em `backend/src/routes/turmas.ts`
-- [ ] T018 [P] [US2] Implementar `GET /api/turmas/:id/alunos` em `backend/src/routes/alunos.ts` per `specs/007-banco-de-dados/contracts/alunos.md`
-- [ ] T019 [P] [US2] Implementar `POST /api/turmas/:id/alunos` em `backend/src/routes/alunos.ts`
-- [ ] T020 [US2] Implementar `PATCH /api/alunos/:id` em `backend/src/routes/alunos.ts` (atualiza necessidades educacionais)
-- [ ] T021 [US2] Implementar `DELETE /api/alunos/:id` em `backend/src/routes/alunos.ts` (soft-delete LGPD: seta `excluido: true`, dissocia PII)
+- [X] T016 [P] [US2] Implementar `GET /api/turmas` em `backend/src/routes/turmas.ts` per `specs/007-banco-de-dados/contracts/turmas.md`
+- [X] T017 [P] [US2] Implementar `POST /api/turmas` em `backend/src/routes/turmas.ts`
+- [X] T018 [P] [US2] Implementar `GET /api/turmas/:id/alunos` em `backend/src/routes/alunos.ts` per `specs/007-banco-de-dados/contracts/alunos.md`
+- [X] T019 [P] [US2] Implementar `POST /api/turmas/:id/alunos` em `backend/src/routes/alunos.ts`
+- [X] T020 [US2] Implementar `PATCH /api/alunos/:id` em `backend/src/routes/alunos.ts` (atualiza necessidades educacionais)
+- [X] T021 [US2] Implementar `DELETE /api/alunos/:id` em `backend/src/routes/alunos.ts` (soft-delete LGPD: seta `excluido: true`, dissocia PII)
 
 **Checkpoint**: US2 verificada — CRUD de turmas e alunos funciona corretamente com isolamento
 
@@ -73,10 +73,10 @@
 
 **Independent Test**: Tentar criar registro de aluno sem `bncc_refs` — banco rejeita. Adicionar BNCC — funciona.
 
-- [ ] T022 [US3] Verificar que CHECK constraint `cardinality(bncc_refs) >= 1` da migração T007 está ativa via `SELECT` em `information_schema.check_constraints`
-- [ ] T023 [P] [US3] Implementar `GET /api/competencias` em `backend/src/routes/competencias.ts` (lista todas as competências BNCC com código, descrição, área de conhecimento)
-- [ ] T024 [US3] Implementar `POST /api/alunos/:id/registros` em `backend/src/routes/registros.ts` per `specs/007-banco-de-dados/contracts/registros.md` (valida `bncc_refs.length >= 1` antes do INSERT)
-- [ ] T025 [P] [US3] Implementar `GET /api/alunos/:id/registros` em `backend/src/routes/registros.ts` com paginação (20 itens/página)
+- [X] T022 [US3] Verificar que CHECK constraint `cardinality(bncc_refs) >= 1` da migração T007 está ativa via `SELECT` em `information_schema.check_constraints`
+- [X] T023 [P] [US3] Implementar `GET /api/competencias` em `backend/src/routes/competencias.ts` (lista todas as competências BNCC com código, descrição, área de conhecimento)
+- [X] T024 [US3] Implementar `POST /api/alunos/:id/registros` em `backend/src/routes/registros.ts` per `specs/007-banco-de-dados/contracts/registros.md` (valida `bncc_refs.length >= 1` antes do INSERT)
+- [X] T025 [P] [US3] Implementar `GET /api/alunos/:id/registros` em `backend/src/routes/registros.ts` com paginação (20 itens/página)
 
 **Checkpoint**: US3 verificada — sem BNCC, o banco rejeita; com BNCC, aceita
 
@@ -88,8 +88,8 @@
 
 **Independent Test**: Finalizar documento, tentar UPDATE direto no banco — trigger rejeita. Verificar múltiplas versões coexistindo.
 
-- [ ] T026 [US4] Verificar que trigger `BEFORE UPDATE OR DELETE` na tabela `versoes_documento` da migração T008 está ativo via `SELECT * FROM pg_trigger`
-- [ ] T027 [US4] Implementar `GET /api/alunos/:id/documentos` em `backend/src/routes/documentos.ts` (lista `versoes_documento` por aluno, ordenado por `finalizado_em DESC`)
+- [X] T026 [US4] Verificar que trigger `BEFORE UPDATE OR DELETE` na tabela `versoes_documento` da migração T008 está ativo via `SELECT * FROM pg_trigger`
+- [X] T027 [US4] Implementar `GET /api/alunos/:id/documentos` em `backend/src/routes/documentos.ts` (lista `versoes_documento` por aluno, ordenado por `finalizado_em DESC`)
 
 **Checkpoint**: US4 verificada — documentos finalizados são imutáveis
 
@@ -101,8 +101,8 @@
 
 **Independent Test**: Cadastrar contexto para turma na semana 10/2026; verificar que aparece disponível para geração de documentos do mesmo período.
 
-- [ ] T028 [P] [US5] Implementar `GET /api/turmas/:id/contextos` em `backend/src/routes/contextos.ts` (lista contextos pedagógicos da turma filtrados por período)
-- [ ] T029 [US5] Implementar `POST /api/turmas/:id/contextos` em `backend/src/routes/contextos.ts`
+- [X] T028 [P] [US5] Implementar `GET /api/turmas/:id/contextos` em `backend/src/routes/contextos.ts` (lista contextos pedagógicos da turma filtrados por período)
+- [X] T029 [US5] Implementar `POST /api/turmas/:id/contextos` em `backend/src/routes/contextos.ts`
 
 **Checkpoint**: US5 verificada — contexto pedagógico cadastrado e disponível
 
@@ -110,10 +110,10 @@
 
 ## Phase 8: Polish & Cross-Cutting Concerns
 
-- [ ] T030 [P] Criar `backend/src/plugins/error-handler.ts` com handler global Fastify (400/403/422/500 → JSON estruturado sem stack trace)
+- [X] T030 [P] Criar `backend/src/plugins/error-handler.ts` com handler global Fastify (400/403/422/500 → JSON estruturado sem stack trace)
 - [ ] T031 [P] Executar `npx prisma db seed` para popular tabela `competencias_bncc` com dados reais da BNCC
-- [ ] T032 Validar todos os endpoints retornam HTTP status corretos per `specs/007-banco-de-dados/contracts/` (turmas.md, alunos.md, registros.md)
-- [ ] T033 [P] Criar `backend/src/app.ts` com Fastify instance, registro de todos os plugins e routes, e `listen()` on `PORT`
+- [X] T032 Validar todos os endpoints retornam HTTP status corretos per `specs/007-banco-de-dados/contracts/` (turmas.md, alunos.md, registros.md)
+- [X] T033 [P] Criar `backend/src/app.ts` com Fastify instance, registro de todos os plugins e routes, e `listen()` on `PORT`
 
 ---
 

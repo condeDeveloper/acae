@@ -1,0 +1,310 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ─────────────────────────────────────────────────────────────
+// ENUMS
+// ─────────────────────────────────────────────────────────────
+
+enum Papel {
+  professor
+  coordenador
+}
+
+enum StatusProfessor {
+  ativo
+  inativo
+}
+
+enum Turno {
+  manha
+  tarde
+  integral
+}
+
+enum StatusTurma {
+  ativa
+  inativa
+}
+
+enum StatusAluno {
+  ativo
+  inativo
+  excluido
+}
+
+enum TipoDocumento {
+  portfolio_semanal
+  relatorio_individual
+  atividade_adaptada
+  resumo_pedagogico
+}
+
+enum StatusDocumento {
+  rascunho
+  em_revisao
+  finalizado
+}
+
+// ─────────────────────────────────────────────────────────────
+// 1. PROFESSOR
+// ─────────────────────────────────────────────────────────────
+
+model Professor {
+  id               String          @id @default(uuid()) @db.Uuid
+  nome             String
+  email            String          @unique
+  papel            Papel           @default(professor)
+  escola           String
+  status           StatusProfessor @default(ativo)
+  supabase_user_id String          @unique @db.Uuid
+
+  turmas    Turma[]
+  rascunhos RascunhoDocumento[]
+  versoes   VersaoDocumento[]
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@map("professores")
+}
+
+// ─────────────────────────────────────────────────────────────
+// 2. TURMA
+// ─────────────────────────────────────────────────────────────
+
+model Turma {
+  id         String      @id @default(uuid()) @db.Uuid
+  nome       String
+  ano_letivo Int
+  turno      Turno
+  escola     String
+  status     StatusTurma @default(ativa)
+
+  professor_id String    @db.Uuid
+  professor    Professor @relation(fields: [professor_id], references: [id])
+
+  alunos    Aluno[]
+  grupos    Grupo[]
+  contextos ContextoPedagogico[]
+  registros RegistroAluno[]
+  rascunhos RascunhoDocumento[]
+  versoes   VersaoDocumento[]
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@index([professor_id])
+  @@map("turmas")
+}
+
+// ─────────────────────────────────────────────────────────────
+// 3. ALUNO
+// ─────────────────────────────────────────────────────────────
+
+model Aluno {
+  id                        String      @id @default(uuid()) @db.Uuid
+  nome                      String
+  data_nascimento           DateTime    @db.Date
+  necessidades_educacionais String?     @db.Text
+  status                    StatusAluno @default(ativo)
+
+  turma_id String @db.Uuid
+  turma    Turma  @relation(fields: [turma_id], references: [id])
+
+  grupos    GrupoAluno[]
+  registros RegistroAluno[]
+  rascunhos RascunhoDocumento[]
+  versoes   VersaoDocumento[]
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@index([turma_id])
+  @@map("alunos")
+}
+
+// ─────────────────────────────────────────────────────────────
+// 4. GRUPO + TABELA DE JUNÇÃO
+// ─────────────────────────────────────────────────────────────
+
+model Grupo {
+  id   String @id @default(uuid()) @db.Uuid
+  nome String
+
+  turma_id String @db.Uuid
+  turma    Turma  @relation(fields: [turma_id], references: [id])
+
+  alunos GrupoAluno[]
+
+  created_at DateTime @default(now())
+
+  @@map("grupos")
+}
+
+model GrupoAluno {
+  grupo_id String @db.Uuid
+  aluno_id String @db.Uuid
+
+  grupo Grupo @relation(fields: [grupo_id], references: [id])
+  aluno Aluno @relation(fields: [aluno_id], references: [id])
+
+  @@id([grupo_id, aluno_id])
+  @@map("grupos_alunos")
+}
+
+// ─────────────────────────────────────────────────────────────
+// 5. COMPETÊNCIA BNCC
+// ─────────────────────────────────────────────────────────────
+
+model CompetenciaBNCC {
+  id                String @id @default(uuid()) @db.Uuid
+  codigo            String @unique
+  descricao         String @db.Text
+  area_conhecimento String
+  nivel_educacional String
+
+  created_at DateTime @default(now())
+
+  @@map("competencias_bncc")
+}
+
+// ─────────────────────────────────────────────────────────────
+// 6. CONTEXTO PEDAGÓGICO
+// ─────────────────────────────────────────────────────────────
+
+model ContextoPedagogico {
+  id             String  @id @default(uuid()) @db.Uuid
+  periodo        String
+  metodologia    String  @db.Text
+  objetivos      String  @db.Text
+  dinamica_grupo String? @db.Text
+
+  turma_id String @db.Uuid
+  turma    Turma  @relation(fields: [turma_id], references: [id])
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@unique([turma_id, periodo])
+  @@map("contextos_pedagogicos")
+}
+
+// ─────────────────────────────────────────────────────────────
+// 7. REGISTRO DO ALUNO (por período)
+// ─────────────────────────────────────────────────────────────
+
+model RegistroAluno {
+  id          String   @id @default(uuid()) @db.Uuid
+  periodo     String
+  objetivos   String   @db.Text
+  atividades  String   @db.Text
+  mediacoes   String?  @db.Text
+  ocorrencias String?  @db.Text
+  bncc_refs   String[]
+  // CHECK: cardinality(bncc_refs) >= 1 via migration SQL
+
+  aluno_id String @db.Uuid
+  aluno    Aluno  @relation(fields: [aluno_id], references: [id])
+
+  turma_id String @db.Uuid
+  turma    Turma  @relation(fields: [turma_id], references: [id])
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@unique([aluno_id, periodo])
+  @@index([turma_id, periodo])
+  @@map("registros_aluno")
+}
+
+// ─────────────────────────────────────────────────────────────
+// 8. RASCUNHO DE DOCUMENTO
+// ─────────────────────────────────────────────────────────────
+
+model RascunhoDocumento {
+  id                 String          @id @default(uuid()) @db.Uuid
+  tipo               TipoDocumento
+  status             StatusDocumento @default(rascunho)
+  conteudo_gerado    String          @db.Text
+  conteudo_editado   String?         @db.Text
+  conteudo_final     String?         @db.Text
+  periodo            String
+  bncc_refs          String[]
+  // CHECK: cardinality(bncc_refs) >= 1 via migration SQL
+  prompt_hash        String
+  duracao_geracao_ms Int?
+  finalizado_em      DateTime?
+
+  professor_id String    @db.Uuid
+  professor    Professor @relation(fields: [professor_id], references: [id])
+
+  aluno_id String? @db.Uuid
+  aluno    Aluno?  @relation(fields: [aluno_id], references: [id])
+
+  turma_id String @db.Uuid
+  turma    Turma  @relation(fields: [turma_id], references: [id])
+
+  versoes VersaoDocumento[]
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@index([professor_id, status])
+  @@index([aluno_id, periodo])
+  @@map("rascunhos_documento")
+}
+
+// ─────────────────────────────────────────────────────────────
+// 9. VERSÃO DE DOCUMENTO — INSERT-ONLY
+// Trigger impede UPDATE e DELETE (ver migration SQL)
+// ─────────────────────────────────────────────────────────────
+
+model VersaoDocumento {
+  id            String   @id @default(uuid()) @db.Uuid
+  numero_versao Int
+  conteudo      String   @db.Text
+  periodo       String
+  bncc_refs     String[]
+  finalizado_em DateTime
+
+  rascunho_id String            @db.Uuid
+  rascunho    RascunhoDocumento @relation(fields: [rascunho_id], references: [id])
+
+  professor_id String    @db.Uuid
+  professor    Professor @relation(fields: [professor_id], references: [id])
+
+  aluno_id String? @db.Uuid
+  aluno    Aluno?  @relation(fields: [aluno_id], references: [id])
+
+  turma_id String @db.Uuid
+  turma    Turma  @relation(fields: [turma_id], references: [id])
+
+  created_at DateTime @default(now())
+
+  @@unique([rascunho_id, numero_versao])
+  @@index([professor_id])
+  @@map("versoes_documento")
+}
+
+// ─────────────────────────────────────────────────────────────
+// 10. CONTROLE DE COTAS DE IA
+// ─────────────────────────────────────────────────────────────
+
+model ControleCotas {
+  id                   String   @id @default(uuid()) @db.Uuid
+  data                 DateTime @unique @db.Date
+  contagem_requisicoes Int      @default(0)
+  ultima_requisicao_em DateTime
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@map("controle_cotas")
+}

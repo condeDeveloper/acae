@@ -1,0 +1,13 @@
+@import './acae-colors.css';
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--p-font-family, system-ui, sans-serif);
+  font-size: 14px;
+  color: #1C1917;
+  background-color: #FFFFFF;
+}

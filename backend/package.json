@@ -1,0 +1,43 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "description": "Portal do Professor ACAE — Backend Fastify",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/app.ts",
+    "build": "tsc",
+    "start": "node dist/app.js",
+    "db:migrate": "dotenv -e ../.env -- prisma migrate dev",
+    "db:deploy": "dotenv -e ../.env -- prisma migrate deploy",
+    "db:generate": "dotenv -e ../.env -- prisma generate",
+    "db:studio": "dotenv -e ../.env -- prisma studio",
+    "db:seed": "dotenv -e ../.env -- tsx prisma/seed.ts"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@fastify/jwt": "^9.1.0",
+    "@fastify/rate-limit": "^10.0.0",
+    "@google/genai": "^1.44.0",
+    "@prisma/client": "^6.19.2",
+    "@supabase/supabase-js": "^2.99.0",
+    "docx": "^9.6.1",
+    "docxtemplater": "^3.68.3",
+    "dotenv": "^17.3.1",
+    "fastify": "^5.8.2",
+    "fastify-plugin": "^5.1.0",
+    "pizzip": "^3.2.0",
+    "puppeteer": "^24.39.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.4.0",
+    "dotenv-cli": "^11.0.0",
+    "prisma": "^6.19.2",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
+  }
+}
