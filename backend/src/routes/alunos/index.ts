@@ -2,6 +2,35 @@ import type { FastifyInstance } from 'fastify'
 import { prisma } from '../../plugins/prisma.js'
 
 export default async function alunosRoutes(fastify: FastifyInstance) {
+  // GET /api/alunos — lista todos os alunos ativos das turmas do professor
+  fastify.get(
+    '/api/alunos',
+    { preHandler: [fastify.authenticate] },
+    async (request, reply) => {
+      const professor = request.professor
+
+      const alunos = await prisma.aluno.findMany({
+        where: {
+          status: 'ativo',
+          turma: { professor_id: professor.id },
+        },
+        include: { turma: { select: { id: true, nome: true } } },
+        orderBy: { nome: 'asc' },
+      })
+
+      return reply.code(200).send({
+        data: alunos.map((a) => ({
+          id: a.id,
+          nome: a.nome,
+          turma_id: a.turma_id,
+          turma_nome: a.turma.nome,
+          necessidades_educacionais: a.necessidades_educacionais,
+        })),
+        total: alunos.length,
+      })
+    }
+  )
+
   // GET /api/turmas/:turmaId/alunos
   fastify.get(
     '/api/turmas/:turmaId/alunos',

@@ -26,6 +26,11 @@
       />
     </div>
 
+    <div class="field-lembrar">
+      <Checkbox v-model="lembrar" :binary="true" inputId="lembrar" />
+      <label for="lembrar">Lembrar de mim</label>
+    </div>
+
     <Message v-if="errorMsg" severity="error" :closable="false">{{ errorMsg }}</Message>
 
     <Button
@@ -44,11 +49,13 @@ import InputText from 'primevue/inputtext'
 import Password from 'primevue/password'
 import Button from 'primevue/button'
 import Message from 'primevue/message'
+import Checkbox from 'primevue/checkbox'
 import { useAuthStore } from '@/stores/auth'
 
 const authStore = useAuthStore()
 const email = ref('')
 const password = ref('')
+const lembrar = ref(true)
 const loading = ref(false)
 const errorMsg = ref('')
 
@@ -56,7 +63,7 @@ async function handleLogin() {
   loading.value = true
   errorMsg.value = ''
   try {
-    await authStore.login(email.value, password.value)
+    await authStore.login(email.value, password.value, lembrar.value)
   } catch {
     errorMsg.value = 'E-mail ou senha inválidos'
   } finally {
@@ -79,6 +86,13 @@ async function handleLogin() {
 .field label {
   font-size: 0.875rem;
   font-weight: 500;
+  color: #374151;
+}
+.field-lembrar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
   color: #374151;
 }
 .mt-3 {

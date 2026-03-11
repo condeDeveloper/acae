@@ -7,6 +7,7 @@ import { dirname } from 'path'
 const __dirname = dirname(fileURLToPath(import.meta.url))
 config({ path: resolve(__dirname, '../../.env') })
 import Fastify from 'fastify'
+import cors from '@fastify/cors'
 import prismaPlugin from './plugins/prisma.js'
 import authPlugin from './plugins/auth.js'
 import errorHandlerPlugin from './plugins/error-handler.js'
@@ -30,6 +31,12 @@ const fastify = Fastify({
 })
 
 async function build() {
+  // CORS — deve ser registrado antes de qualquer rota
+  await fastify.register(cors, {
+    origin: process.env.CORS_ORIGIN ?? 'http://localhost:5173',
+    credentials: true,
+  })
+
   // Plugins
   await fastify.register(prismaPlugin)
   await fastify.register(authPlugin)

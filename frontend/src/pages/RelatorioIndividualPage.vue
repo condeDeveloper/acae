@@ -105,7 +105,7 @@ import HistoricoRelatorios from '@/components/HistoricoRelatorios.vue'
 import { useRelatorioStore } from '@/stores/relatorio.store'
 import api from '@/services/api'
 
-interface Aluno { id: string; nome: string }
+interface Aluno { id: string; nome: string; turma_id: string; turma_nome: string }
 
 const confirm = useConfirm()
 const toast = useToast()
@@ -117,8 +117,8 @@ const loadingAlunos = ref(false)
 onMounted(async () => {
   loadingAlunos.value = true
   try {
-    const { data } = await api.get<Aluno[]>('/api/alunos')
-    alunos.value = data
+    const { data } = await api.get<{ data: Aluno[] }>('/api/alunos')
+    alunos.value = data.data
   } catch {
     /* handled by interceptor */
   } finally {

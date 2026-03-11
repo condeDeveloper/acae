@@ -18,6 +18,7 @@ export default fp(async function attachProfessorPlugin(fastify: FastifyInstance)
   fastify.addHook('onRequest', async (request, reply) => {
     // Rotas públicas — sem autenticação
     if (
+      request.method === 'OPTIONS' ||
       request.url.startsWith('/api/downloads/') ||
       request.url === '/health'
     ) return

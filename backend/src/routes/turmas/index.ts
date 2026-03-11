@@ -88,4 +88,48 @@ export default async function turmasRoutes(fastify: FastifyInstance) {
       })
     }
   )
+
+  // PATCH /api/turmas/:turmaId — atualiza turma
+  fastify.patch(
+    '/api/turmas/:turmaId',
+    {
+      preHandler: [fastify.authenticate],
+      schema: {
+        body: {
+          type: 'object',
+          properties: {
+            nome: { type: 'string', minLength: 1, maxLength: 100 },
+            turno: { type: 'string', enum: ['manha', 'tarde', 'integral'] },
+            escola: { type: 'string', minLength: 1, maxLength: 200 },
+          },
+          additionalProperties: false,
+        },
+      },
+    },
+    async (request, reply) => {
+      const professor = request.professor
+      const { turmaId } = request.params as { turmaId: string }
+      const body = request.body as { nome?: string; turno?: 'manha' | 'tarde' | 'integral'; escola?: string }
+
+      const turma = await prisma.turma.findFirst({
+        where: { id: turmaId, professor_id: professor.id },
+      })
+      if (!turma) return reply.code(404).send({ error: 'Turma não encontrada' })
+
+      const atualizada = await prisma.turma.update({
+        where: { id: turmaId },
+        data: body,
+      })
+
+      return reply.code(200).send({
+        id: atualizada.id,
+        nome: atualizada.nome,
+        ano_letivo: atualizada.ano_letivo,
+        turno: atualizada.turno,
+        escola: atualizada.escola,
+        status: atualizada.status,
+        created_at: atualizada.created_at,
+      })
+    }
+  )
 }

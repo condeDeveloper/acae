@@ -109,7 +109,7 @@ import DocumentoRevisor from '@/components/DocumentoRevisor.vue'
 import BotaoExportar from '@/components/BotaoExportar.vue'
 import api from '@/services/api'
 
-interface Aluno { id: string; nome: string }
+interface Aluno { id: string; nome: string; turma_id: string; turma_nome: string }
 interface Rascunho { id: string; status: string; conteudo_gerado: string; conteudo_editado?: string }
 
 const confirm = useConfirm()
@@ -147,8 +147,8 @@ const podeFinalizar = computed(() => !!rascunho.value && rascunho.value.status !
 onMounted(async () => {
   loadingAlunos.value = true
   try {
-    const { data } = await api.get<Aluno[]>('/api/alunos')
-    alunos.value = data
+    const { data } = await api.get<{ data: Aluno[] }>('/api/alunos')
+    alunos.value = data.data
   } catch {
     /* handled by interceptor */
   } finally {
