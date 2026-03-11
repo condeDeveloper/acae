@@ -26,7 +26,10 @@ app.use(PrimeVue, {
 })
 app.use(ConfirmationService)
 app.use(ToastService)
-app.use(router)
+// NOTE: router is intentionally NOT installed here.
+// Vue Router fires its initial navigation inside app.use(router),
+// which would run beforeEach guards before auth is initialized.
+// We install the router AFTER init() so auth is ready first.
 
 // Validate required env vars
 const requiredEnv = ['VITE_SUPABASE_URL', 'VITE_SUPABASE_ANON_KEY', 'VITE_API_BASE_URL'] as const
@@ -36,8 +39,9 @@ for (const key of requiredEnv) {
   }
 }
 
-// Initialize auth state before mounting
+// Initialize auth state, then install router and mount
 const authStore = useAuthStore()
 authStore.init().then(() => {
+  app.use(router)   // installed AFTER auth is ready → beforeEach sees correct session
   app.mount('#app')
 })

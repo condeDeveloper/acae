@@ -37,6 +37,11 @@ interface VersaoDocumento {
   finalizado_em: string | null
 }
 
+interface ApiResponse {
+  data: VersaoDocumento[]
+  total: number
+}
+
 const props = defineProps<{ alunoId: string }>()
 
 const versoes = ref<VersaoDocumento[]>([])
@@ -46,10 +51,10 @@ async function carregar() {
   if (!props.alunoId) return
   loading.value = true
   try {
-    const { data } = await api.get<VersaoDocumento[]>(`/api/alunos/${props.alunoId}/documentos`, {
+    const { data } = await api.get<ApiResponse>(`/api/alunos/${props.alunoId}/documentos`, {
       params: { tipo: 'relatorio_individual' },
     })
-    versoes.value = data
+    versoes.value = data.data ?? []
   } catch {
     /* handled by interceptor */
   } finally {
