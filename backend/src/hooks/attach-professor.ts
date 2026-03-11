@@ -20,7 +20,8 @@ export default fp(async function attachProfessorPlugin(fastify: FastifyInstance)
     if (
       request.method === 'OPTIONS' ||
       request.url.startsWith('/api/downloads/') ||
-      request.url === '/health'
+      request.url === '/health' ||
+      request.url === '/api/auth/register'
     ) return
 
     try {

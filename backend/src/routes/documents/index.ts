@@ -141,7 +141,8 @@ export default async function documentsRoutes(fastify: FastifyInstance) {
       where: { id },
       include: {
         professor: { select: { nome: true, escola: true } },
-        aluno: { select: { nome: true, turma: { select: { nome: true } } } },
+        aluno: { select: { nome: true } },
+        turma: { select: { nome: true, escola: true, turno: true } },
       },
     })
     if (!rascunho) return reply.code(404).send({ error: 'Rascunho não encontrado' })
@@ -151,12 +152,14 @@ export default async function documentsRoutes(fastify: FastifyInstance) {
     const dados = {
       tipo: rascunho.tipo,
       professorNome: rascunho.professor.nome,
-      turmaNome: rascunho.aluno?.turma?.nome ?? '',
+      turmaNome: rascunho.turma?.nome ?? '',
       alunoNome: rascunho.aluno?.nome ?? '',
       periodo: rascunho.periodo,
       bnccCodigos: (rascunho.bncc_refs as string[]).join(', '),
       conteudo,
       geradoEm: new Date().toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' }),
+      unidade: rascunho.turma?.escola ?? '',
+      turno: rascunho.turma?.turno ?? '',
     }
 
     let buffer: Buffer

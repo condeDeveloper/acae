@@ -1,6 +1,42 @@
 import type { FastifyInstance } from 'fastify'
+import { prisma } from '../../plugins/prisma.js'
 
 export default async function authRoutes(fastify: FastifyInstance) {
+  /**
+   * POST /api/auth/register
+   * Creates a professor profile after Supabase sign-up or Google OAuth.
+   * Does NOT require an existing professor record — validates JWT directly.
+   */
+  fastify.post('/api/auth/register', async (request, reply) => {
+    const auth = request.headers.authorization
+    if (!auth?.startsWith('Bearer ')) return reply.code(401).send({ error: 'Token obrigatório' })
+
+    let payload: { sub: string; email?: string; user_metadata?: { full_name?: string; name?: string } }
+    try {
+      payload = await fastify.verifyJwt(auth.slice(7)) as typeof payload
+    } catch {
+      return reply.code(401).send({ error: 'Token inválido' })
+    }
+
+    const body = request.body as { nome?: string; escola?: string }
+    const nome = body.nome
+      || payload.user_metadata?.full_name
+      || payload.user_metadata?.name
+      || 'Professor'
+    const email = (payload.email as string | undefined) ?? ''
+    const supabase_user_id = payload.sub
+
+    // Upsert: create if not exists, return existing if it does
+    const professor = await prisma.professor.upsert({
+      where: { supabase_user_id },
+      create: { supabase_user_id, nome, email, escola: body.escola ?? '' },
+      update: {},
+      select: { id: true, nome: true, email: true, papel: true, escola: true },
+    })
+
+    return reply.code(201).send(professor)
+  })
+
   /**
    * GET /api/auth/me
    * Returns the authenticated professor's profile.

@@ -21,7 +21,14 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const status = error.response?.status
-    if (status === 401 && !isLoggingOut) {
+    const errorBody: string = error.response?.data?.error ?? ''
+    // Only auto-logout for genuine token errors — NOT for 'Professor não encontrado'
+    // which happens normally during registration before the profile is created.
+    const isTokenError =
+      !errorBody ||
+      errorBody.toLowerCase().includes('token') ||
+      errorBody.toLowerCase().includes('expirado')
+    if (status === 401 && !isLoggingOut && isTokenError) {
       isLoggingOut = true
       try {
         // import lazily to avoid circular deps

@@ -25,8 +25,6 @@ export const useAuthStore = defineStore('auth', () => {
     // Set session immediately so isAuthenticated is true before router.push
     session.value = data.session
     if (!rememberMe) {
-      // Mark session-only: sessionStorage survives reloads but clears on tab close.
-      // localStorage flag lets init() detect that a new tab reopened without the flag.
       sessionStorage.setItem('acae:session-only', '1')
       localStorage.setItem('acae:had-session-only', '1')
     } else {
@@ -34,8 +32,59 @@ export const useAuthStore = defineStore('auth', () => {
       localStorage.removeItem('acae:had-session-only')
     }
     await fetchProfessor()
+    // If professor is still null (user exists in Supabase but not in our DB),
+    // create the profile now — handles first-time logins after manual user creation or
+    // cases where registration completed in Supabase but the DB record was never saved.
+    if (!professor.value && data.session) {
+      await createProfile(data.session)
+    }
     const redirect = (router.currentRoute.value.query.redirect as string) || '/'
     await router.push(redirect)
+  }
+
+  /** Registers a new user with email + password. Returns 'confirm-email' if confirmation is needed. */
+  async function register(nome: string, email: string, password: string): Promise<'ok' | 'confirm-email'> {
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { data: { full_name: nome } },
+    })
+    if (error) throw new Error(error.message)
+
+    // Auto-confirmed (Supabase project has "Confirm email" disabled)
+    if (data.session) {
+      session.value = data.session
+      await createProfile(data.session, nome)
+      const redirect = (router.currentRoute.value.query.redirect as string) || '/'
+      await router.push(redirect)
+      return 'ok'
+    }
+
+    // Email confirmation required — session is null until user confirms
+    return 'confirm-email'
+  }
+
+  /** Initiates Google OAuth flow — browser will redirect to Google. */
+  async function loginWithGoogle() {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: window.location.origin },
+    })
+    if (error) throw new Error(error.message)
+  }
+
+  /** Creates/upserts the professor record in our DB after first sign-up or OAuth. */
+  async function createProfile(sess: Session, nome?: string, escola = '') {
+    try {
+      const resolvedNome = nome
+        || sess.user.user_metadata?.full_name
+        || sess.user.user_metadata?.name
+        || 'Professor'
+      const { data } = await api.post<Professor>('/api/auth/register', { nome: resolvedNome, escola })
+      professor.value = data
+    } catch {
+      await fetchProfessor()
+    }
   }
 
   async function logout() {
@@ -71,13 +120,27 @@ export const useAuthStore = defineStore('auth', () => {
     session.value = data.session
     if (data.session) await fetchProfessor()
 
-    supabase.auth.onAuthStateChange((_event, newSession) => {
+    supabase.auth.onAuthStateChange(async (_event, newSession) => {
       session.value = newSession
       if (!newSession) {
         professor.value = null
+        return
+      }
+      // Only handle OAuth providers here (Google etc.).
+      // Email/password login and register are handled explicitly by login() and register().
+      const provider = newSession.user.app_metadata?.provider
+      if (provider && provider !== 'email' && !professor.value) {
+        try {
+          const { data } = await api.get<Professor>('/api/auth/me')
+          professor.value = data
+        } catch {
+          await createProfile(newSession)
+        }
+        const redirect = (router.currentRoute.value.query.redirect as string) || '/'
+        await router.push(redirect)
       }
     })
   }
 
-  return { session, professor, isAuthenticated, papel, login, logout, init, fetchProfessor }
+  return { session, professor, isAuthenticated, papel, login, register, loginWithGoogle, logout, init, fetchProfessor }
 })
