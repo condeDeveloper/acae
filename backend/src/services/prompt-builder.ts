@@ -47,6 +47,7 @@ Portfólio Semanal:`
 
 interface RelatorioData {
   pseudo: string
+  periodoGeral?: string
   registros: Array<{
     periodo: string
     atividades: string
@@ -71,7 +72,8 @@ Gere um Relatório Individual consolidado para o aluno "${dados.pseudo}" com bas
 - Relacionar explicitamente às competências BNCC trabalhadas
 - Usar linguagem profissional adequada para portfólio pedagógico
 - NÃO usar nomes reais — use "o aluno" ou "a criança"
-- Escrever em Português Brasileiro formal
+- Escrever em Português Brasileiro formal${dados.periodoGeral ? `
+- O período de avaliação a ser mencionado no relatório é: ${dados.periodoGeral}` : ''}
 
 ${dados.contexto ? `Contexto: ${dados.contexto}\n\n` : ''}Registros consolidados:
 ${registrosTexto}

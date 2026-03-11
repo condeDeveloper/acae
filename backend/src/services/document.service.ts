@@ -29,6 +29,11 @@ interface GenerateParams {
   bncc_refs?: string[]
 }
 
+function toBR(iso: string): string {
+  const [y, m, d] = iso.split('-')
+  return `${d}/${m}/${y}`
+}
+
 export async function gerarDocumento(params: GenerateParams) {
   const { professor, tipo } = params
 
@@ -47,6 +52,7 @@ export async function gerarDocumento(params: GenerateParams) {
   let turmaId = ''
   let turmaNome = ''
   let alunoNome = ''
+  let pseudo = ''
 
   if (tipo === 'portfolio_semanal' || tipo === 'relatorio_individual') {
     if (!params.aluno_id) throw Object.assign(new Error('aluno_id obrigatório'), { statusCode: 400 })
@@ -96,9 +102,9 @@ export async function gerarDocumento(params: GenerateParams) {
       ? `${contexto.objetivos}\n\n${contexto.metodologia}${contexto.dinamica_grupo ? '\n\n' + contexto.dinamica_grupo : ''}`
       : undefined
 
-    const pseudo = pseudonymize()
+    pseudo = pseudonymize()
     const registrosMapped = registros.map((r) => ({
-      periodo: r.periodo,
+      periodo: toBR(r.periodo),
       atividades: r.atividades ?? '',
       objetivos: r.objetivos ?? '',
       medicoes: r.mediacoes ?? '',
@@ -113,8 +119,12 @@ export async function gerarDocumento(params: GenerateParams) {
         contexto: descricaoContexto,
       })
     } else {
+      const periodoGeral = params.periodo_inicio && params.periodo_fim
+        ? `${toBR(params.periodo_inicio)} a ${toBR(params.periodo_fim)}`
+        : undefined
       prompt = buildPromptRelatorio({
         pseudo,
+        periodoGeral,
         registros: registrosMapped,
         contexto: descricaoContexto,
       })
@@ -199,12 +209,17 @@ export async function gerarDocumento(params: GenerateParams) {
     throw Object.assign(new Error(`Tipo de documento inválido: ${tipo}`), { statusCode: 400 })
   }
 
-  // Call Gemini
-  const conteudoGerado = await generateContent(prompt)
+  // Call AI
+  let conteudoGerado = await generateContent(prompt)
+
+  // Replace pseudo UUID with real student name in the generated content
+  if (pseudo && alunoNome) {
+    conteudoGerado = conteudoGerado.replaceAll(pseudo, alunoNome)
+  }
 
   const periodo = params.periodo_inicio && params.periodo_fim
-    ? `${params.periodo_inicio} a ${params.periodo_fim}`
-    : (params.periodo_inicio ?? params.periodo_fim ?? 'Sem período')
+    ? `${toBR(params.periodo_inicio)} a ${toBR(params.periodo_fim)}`
+    : (params.periodo_inicio ? toBR(params.periodo_inicio) : params.periodo_fim ? toBR(params.periodo_fim) : 'Sem período')
 
   // Save draft
   const rascunho = await prisma.rascunhoDocumento.create({

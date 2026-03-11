@@ -44,12 +44,19 @@ const emit = defineEmits<{
 
 const conteudoLocal = ref(props.rascunho.conteudo_editado ?? props.rascunho.conteudo_gerado)
 const saveStatus = ref<'idle' | 'saving' | 'saved' | 'error'>('idle')
+let pendingSave = false
+
+// Update local content when a different rascunho is loaded (id change)
+watch(() => props.rascunho.id, () => {
+  conteudoLocal.value = props.rascunho.conteudo_editado ?? props.rascunho.conteudo_gerado
+  pendingSave = false
+  saveStatus.value = 'idle'
+})
 
 watch(() => props.rascunho.conteudo_editado, (val) => {
   if (val !== undefined) conteudoLocal.value = val
 })
 
-let pendingSave = false
 function onInput() {
   pendingSave = true
 }

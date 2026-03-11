@@ -92,6 +92,8 @@ export const useRelatorioStore = defineStore('relatorio', () => {
   }
 
   async function carregarRascunhoAtivo(alunoId: string) {
+    rascunho.value = null
+    etapa.value = 'formulario'
     try {
       const { data } = await api.get<{ rascunho: Rascunho | null }>(
         `/api/documents/rascunhos`,

@@ -1,7 +1,7 @@
 import { prisma } from '../plugins/prisma.js'
 
-const DAILY_LIMIT = 1500
-const WARNING_THRESHOLD = 1350
+const DAILY_LIMIT = 14400
+const WARNING_THRESHOLD = 13000
 
 export class QuotaExceededError extends Error {
   statusCode = 429
