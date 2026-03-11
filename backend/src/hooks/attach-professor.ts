@@ -24,8 +24,10 @@ export default fp(async function attachProfessorPlugin(fastify: FastifyInstance)
     ) return
 
     try {
-      await request.jwtVerify()
-      const userId = (request.user as { sub: string }).sub
+      const auth = request.headers.authorization
+      if (!auth?.startsWith('Bearer ')) throw new Error('No token')
+      const payload = await fastify.verifyJwt(auth.slice(7))
+      const userId = payload.sub
 
       const professor = await prisma.professor.findUnique({
         where: { supabase_user_id: userId },
