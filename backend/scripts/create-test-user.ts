@@ -12,10 +12,15 @@ config({ path: resolve(__dirname, '../../.env') })
 import { createClient } from '@supabase/supabase-js'
 import { PrismaClient } from '@prisma/client'
 
-const EMAIL = 'professor@acae.edu.br'
-const PASSWORD = 'Acae@2026!'
-const NOME = 'Maria Silva'
-const ESCOLA = 'EMEI Monteiro Lobato'
+const EMAIL = process.env.TEST_EMAIL!
+const PASSWORD = process.env.TEST_PASSWORD!
+const NOME = process.env.TEST_NOME ?? 'Maria Silva'
+const ESCOLA = process.env.TEST_ESCOLA ?? 'EMEI ML'
+
+if (!EMAIL || !PASSWORD) {
+  console.error('❌ Configure TEST_EMAIL e TEST_PASSWORD no .env')
+  process.exit(1)
+}
 
 async function main() {
   const supabaseUrl = process.env.SUPABASE_URL

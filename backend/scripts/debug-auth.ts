@@ -26,8 +26,9 @@ async function main() {
   }
 
   // 2. Testar login
-  const EMAIL = 'professor@acae.edu.br'
-  const PASSWORD = 'Acae@2026!'
+  const EMAIL = process.env.TEST_EMAIL
+  const PASSWORD = process.env.TEST_PASSWORD
+  if (!EMAIL || !PASSWORD) { console.error('❌ Configure TEST_EMAIL e TEST_PASSWORD no .env'); process.exit(1) }
 
   const anonClient = createClient(
     process.env.SUPABASE_URL!,

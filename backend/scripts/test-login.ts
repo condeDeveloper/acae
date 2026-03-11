@@ -12,9 +12,12 @@ const supabase = createClient(
 )
 
 async function main() {
+  if (!process.env.TEST_EMAIL || !process.env.TEST_PASSWORD) {
+    console.error('❌ Configure TEST_EMAIL e TEST_PASSWORD no .env'); process.exit(1)
+  }
   const { data, error } = await supabase.auth.signInWithPassword({
-    email: 'professor@acae.edu.br',
-    password: 'Acae@2026!',
+    email: process.env.TEST_EMAIL!,
+    password: process.env.TEST_PASSWORD!,
   })
 
   if (error) {

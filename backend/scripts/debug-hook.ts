@@ -24,7 +24,7 @@ async function main() {
   }
 
   // Check if professor exists
-  const prof = await prisma.professor.findFirst({ where: { email: 'professor@acae.edu.br' } })
+  const prof = await prisma.professor.findFirst({ where: { email: process.env.TEST_EMAIL } })
   console.log('\n--- Professor ---')
   console.log(prof)
 

@@ -7,9 +7,12 @@ config({ path: resolve(__dirname, '../../.env') })
 import { createClient } from '@supabase/supabase-js'
 
 const sb = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_ANON_KEY!)
+const testEmail = process.env.TEST_EMAIL
+const testPassword = process.env.TEST_PASSWORD
+if (!testEmail || !testPassword) { console.error('Defina TEST_EMAIL e TEST_PASSWORD no .env'); process.exit(1) }
 const { data, error } = await sb.auth.signInWithPassword({
-  email: 'professor@acae.edu.br',
-  password: 'Acae@2026!',
+  email: testEmail,
+  password: testPassword,
 })
 if (error || !data.session) { console.error('Login error:', error?.message); process.exit(1) }
 
