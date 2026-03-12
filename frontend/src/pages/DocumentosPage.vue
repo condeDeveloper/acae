@@ -2,7 +2,7 @@
   <div class="page-container">
     <div class="page-header">
       <h2>Documentos</h2>
-      <p>Histórico de documentos gerados</p>
+      <p>Histórico de documentos gerados — clique para baixar</p>
     </div>
 
     <DataTable
@@ -14,6 +14,8 @@
       sortField="finalizado_em"
       :sortOrder="-1"
       emptyMessage="Nenhum documento encontrado"
+      class="cursor-pointer-rows"
+      @row-click="abrirDownload($event.data)"
     >
       <Column field="aluno_nome" header="Aluno" sortable />
       <Column field="tipo" header="Tipo" sortable>
@@ -25,12 +27,33 @@
           {{ data.finalizado_em ? new Date(data.finalizado_em).toLocaleDateString('pt-BR') : '—' }}
         </template>
       </Column>
-      <Column header="Download">
+      <Column header="Download" style="width: 90px; text-align: center">
         <template #body="{ data }">
-          <BotaoExportar :rascunho-id="data.rascunho_id" />
+          <Button icon="pi pi-download" text rounded @click.stop="abrirFormato(data)" />
         </template>
       </Column>
     </DataTable>
+
+    <!-- Dialog pequeno: selecionar formato -->
+    <Dialog v-model:visible="formatoVisible" header="Selecione o formato" modal :style="{ width: '280px' }">
+      <div v-if="selecionadoFormato" class="formato-dialog">
+        <BotaoExportar :rascunho-id="selecionadoFormato.rascunho_id" />
+      </div>
+    </Dialog>
+
+    <!-- Dialog de Download -->
+    <Dialog v-model:visible="downloadVisible" header="Baixar Documento" modal :style="{ width: '380px' }">
+      <div v-if="selecionado" class="doc-info">
+        <div class="doc-campo"><span class="doc-label">Aluno</span><span class="doc-valor">{{ selecionado.aluno_nome || '—' }}</span></div>
+        <div class="doc-campo"><span class="doc-label">Tipo</span><span class="doc-valor">{{ tipoLabel(selecionado.tipo) }}</span></div>
+        <div class="doc-campo"><span class="doc-label">Período</span><span class="doc-valor">{{ selecionado.periodo }}</span></div>
+        <div class="doc-campo"><span class="doc-label">Gerado em</span><span class="doc-valor">{{ selecionado.finalizado_em ? new Date(selecionado.finalizado_em).toLocaleDateString('pt-BR') : '—' }}</span></div>
+        <div class="doc-download">
+          <p class="doc-download-label">Selecione o formato:</p>
+          <BotaoExportar :rascunho-id="selecionado.rascunho_id" />
+        </div>
+      </div>
+    </Dialog>
   </div>
 </template>
 
@@ -38,6 +61,8 @@
 import { ref, onMounted } from 'vue'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
+import Button from 'primevue/button'
+import Dialog from 'primevue/dialog'
 import BotaoExportar from '@/components/BotaoExportar.vue'
 import api from '@/services/api'
 
@@ -54,6 +79,10 @@ interface Documento {
 
 const documentos = ref<Documento[]>([])
 const loading = ref(false)
+const downloadVisible = ref(false)
+const selecionado = ref<Documento | null>(null)
+const formatoVisible = ref(false)
+const selecionadoFormato = ref<Documento | null>(null)
 
 const TIPO_LABELS: Record<string, string> = {
   relatorio_individual: 'Relatório Individual',
@@ -64,6 +93,16 @@ const TIPO_LABELS: Record<string, string> = {
 
 function tipoLabel(tipo: string) {
   return TIPO_LABELS[tipo] ?? tipo
+}
+
+function abrirDownload(doc: Documento) {
+  selecionado.value = doc
+  downloadVisible.value = true
+}
+
+function abrirFormato(doc: Documento) {
+  selecionadoFormato.value = doc
+  formatoVisible.value = true
 }
 
 onMounted(async () => {
@@ -84,4 +123,12 @@ onMounted(async () => {
 .page-header { margin-bottom: 1.5rem; }
 .page-header h2 { margin: 0 0 0.25rem; font-size: 1.5rem; color: #7c3aed; }
 .page-header p { margin: 0; color: #6b7280; }
+.doc-info { display: flex; flex-direction: column; gap: 0.875rem; padding: 0.25rem 0; }
+.doc-campo { display: flex; flex-direction: column; gap: 0.2rem; }
+.doc-label { font-size: 0.75rem; font-weight: 600; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.05em; }
+.doc-valor { font-size: 0.9375rem; color: #111827; }
+.doc-download { margin-top: 0.5rem; padding-top: 1rem; border-top: 1px solid #e5e7eb; }
+.doc-download-label { margin: 0 0 0.75rem; font-size: 0.875rem; font-weight: 500; color: #374151; }
+.formato-dialog { display: flex; justify-content: center; padding: 0.5rem 0 0.25rem; }
+:deep(.cursor-pointer-rows .p-datatable-tbody > tr) { cursor: pointer; }
 </style>
