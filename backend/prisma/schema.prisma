@@ -295,7 +295,29 @@ model VersaoDocumento {
 }
 
 // ─────────────────────────────────────────────────────────────
-// 10. CONTROLE DE COTAS DE IA
+// 10. ATIVIDADE BNCC — banco de atividades pedagógicas
+// ─────────────────────────────────────────────────────────────
+
+model AtividadeBNCC {
+  id                String   @id @default(uuid()) @db.Uuid
+  titulo            String
+  descricao         String   @db.Text
+  como_fazer        String   @db.Text
+  materiais         String?  @db.Text
+  area_conhecimento String
+  nivel_educacional String
+  bncc_refs         String[]
+  dificuldade       String   // basica | intermediaria | avancada
+
+  created_at DateTime @default(now())
+
+  @@index([area_conhecimento])
+  @@index([nivel_educacional])
+  @@map("atividades_bncc")
+}
+
+// ─────────────────────────────────────────────────────────────
+// 11. CONTROLE DE COTAS DE IA
 // ─────────────────────────────────────────────────────────────
 
 model ControleCotas {

@@ -25,6 +25,7 @@ const router = createRouter({
         { path: 'documentos', name: 'documentos', component: () => import('@/pages/DocumentosPage.vue'), meta: { requiresAuth: true } },
         { path: 'documentos/gerar', name: 'gerar-documento', component: () => import('@/pages/GerarDocumentoPage.vue'), meta: { requiresAuth: true } },
         { path: 'relatorio-individual', name: 'relatorio-individual', component: () => import('@/pages/RelatorioIndividualPage.vue'), meta: { requiresAuth: true } },
+        { path: 'atividades', name: 'atividades', component: () => import('@/pages/AtividadesPage.vue'), meta: { requiresAuth: true } },
         { path: 'perfil', name: 'perfil', component: () => import('@/pages/PerfilPage.vue') },
         { path: '403', name: 'forbidden', component: () => import('@/pages/ForbiddenPage.vue') },
       ],
