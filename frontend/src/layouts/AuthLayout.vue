@@ -16,15 +16,16 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #f5f3ff;
+  background: var(--bg-base);
 }
 .auth-card {
   width: 100%;
   max-width: 420px;
-  background: #fff;
-  border-radius: 12px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
   padding: 2rem;
-  box-shadow: 0 4px 24px rgba(124, 58, 237, 0.12);
+  box-shadow: 0 8px 48px rgba(0,0,0,0.5), 0 0 0 1px rgba(139,92,246,0.08);
 }
 .auth-header {
   text-align: center;
@@ -34,11 +35,11 @@
   margin: 0;
   font-size: 1.5rem;
   font-weight: 700;
-  color: #7c3aed;
+  color: var(--acae-primary);
 }
 .auth-subtitle {
   margin: 0.25rem 0 0;
-  color: #6b7280;
+  color: var(--text-3);
   font-size: 0.875rem;
 }
 </style>

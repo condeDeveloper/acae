@@ -1,5 +1,33 @@
 :root {
-  --acae-yellow: #D97706;
-  --acae-yellow-light: #FEF3C7;
-  --acae-yellow-text: #92400E;
+  /* === Brand === */
+  --acae-primary:       #8b5cf6;
+  --acae-primary-dim:   rgba(139, 92, 246, 0.12);
+  --acae-primary-glow:  rgba(139, 92, 246, 0.35);
+
+  /* === Backgrounds === */
+  --bg-base:     #080c14;
+  --bg-surface:  #0d1321;
+  --bg-card:     #111827;
+  --bg-overlay:  #1a2236;
+  --bg-hover:    rgba(255, 255, 255, 0.04);
+  --bg-active:   rgba(139, 92, 246, 0.12);
+
+  /* === Borders === */
+  --border:       rgba(255, 255, 255, 0.07);
+  --border-hover: rgba(255, 255, 255, 0.14);
+
+  /* === Text === */
+  --text-1: #f1f5f9;
+  --text-2: #94a3b8;
+  --text-3: #475569;
+
+  /* === Status === */
+  --color-success: #10b981;
+  --color-warn:    #f59e0b;
+  --color-error:   #ef4444;
+
+  /* === Legacy (compat) === */
+  --acae-yellow:       #D97706;
+  --acae-yellow-light: rgba(217, 119, 6, 0.15);
+  --acae-yellow-text:  #fbbf24;
 }

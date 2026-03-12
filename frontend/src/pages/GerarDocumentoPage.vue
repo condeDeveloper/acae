@@ -354,12 +354,12 @@ async function finalizar() {
 <style scoped>
 .page-container { padding: 1rem; }
 .page-header { margin-bottom: 1.5rem; }
-.page-header h2 { margin: 0 0 0.25rem; font-size: 1.5rem; color: #7c3aed; }
-.page-header p { margin: 0; color: #6b7280; }
+.page-header h2 { margin: 0 0 0.25rem; font-size: 1.5rem; color: var(--acae-primary); }
+.page-header p { margin: 0; color: var(--text-2); }
 .form-card, .rascunho-card {
-  background: #fff;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
   padding: 1.5rem;
 }
 .field {
@@ -371,7 +371,7 @@ async function finalizar() {
 .field label {
   font-size: 0.875rem;
   font-weight: 500;
-  color: #374151;
+  color: var(--text-2);
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -379,8 +379,8 @@ async function finalizar() {
 .label-badge {
   font-size: 0.75rem;
   font-weight: 400;
-  color: #7c3aed;
-  background: #ede9fe;
+  color: var(--acae-primary);
+  background: var(--acae-primary-dim);
   padding: 0.1rem 0.4rem;
   border-radius: 999px;
 }
@@ -390,7 +390,7 @@ async function finalizar() {
   justify-content: space-between;
   margin-bottom: 1rem;
 }
-.rascunho-header h3 { margin: 0; }
+.rascunho-header h3 { margin: 0; color: var(--text-1); }
 .rascunho-actions {
   display: flex;
   gap: 0.75rem;

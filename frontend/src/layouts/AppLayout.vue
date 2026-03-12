@@ -1,12 +1,10 @@
 <template>
   <div class="app-layout">
-    <aside class="sidebar">
-      <AppSidebar />
-    </aside>
+    <AppSidebar />
     <main class="main-content">
       <RouterView />
     </main>
-    <Toast />
+    <Toast position="bottom-right" />
     <ConfirmDialog />
   </div>
 </template>
@@ -26,16 +24,15 @@ onUnmounted(stop)
 <style scoped>
 .app-layout {
   display: flex;
+  flex-direction: column;
   min-height: 100vh;
+  background: var(--bg-base);
 }
-.sidebar {
-  width: 240px;
-  flex-shrink: 0;
-  background: #7c3aed;
-}
+
 .main-content {
   flex: 1;
-  padding: 1.5rem;
+  padding: 2rem 2.5rem;
   overflow-y: auto;
+  min-width: 0;
 }
 </style>

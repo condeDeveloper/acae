@@ -15,6 +15,9 @@
       responsiveLayout="scroll"
       sortField="nome"
       :sortOrder="1"
+      :paginator="turmas.length > 10"
+      :rows="10"
+      :rowsPerPageOptions="[10, 25, 50]"
       emptyMessage="Nenhuma turma cadastrada. Clique em 'Nova Turma' para começar."
       class="cursor-pointer-rows"
       @row-click="abrirCard($event.data)"
@@ -225,15 +228,15 @@ onMounted(carregar)
   align-items: flex-start;
   margin-bottom: 1.5rem;
 }
-.page-header h2 { margin: 0 0 0.25rem; font-size: 1.5rem; color: #7c3aed; }
-.page-header p { margin: 0; color: #6b7280; font-size: 0.875rem; }
+.page-header h2 { margin: 0 0 0.25rem; font-size: 1.5rem; color: var(--acae-primary); }
+.page-header p { margin: 0; color: var(--text-2); font-size: 0.875rem; }
 .dialog-form { display: flex; flex-direction: column; gap: 1rem; padding: 0.5rem 0; }
 .field { display: flex; flex-direction: column; gap: 0.375rem; }
-.field label { font-size: 0.875rem; font-weight: 500; color: #374151; }
+.field label { font-size: 0.875rem; font-weight: 500; color: var(--text-2); }
 .card-detalhe { display: flex; flex-direction: column; gap: 0.875rem; padding: 0.25rem 0; }
 .card-campo { display: flex; flex-direction: column; gap: 0.2rem; }
-.card-label { font-size: 0.75rem; font-weight: 600; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.05em; }
-.card-valor { font-size: 0.9375rem; color: #111827; }
+.card-label { font-size: 0.75rem; font-weight: 600; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.05em; }
+.card-valor { font-size: 0.9375rem; color: var(--text-1); }
 :deep(.cursor-pointer-rows .p-datatable-tbody > tr) { cursor: pointer; }
 </style>
 

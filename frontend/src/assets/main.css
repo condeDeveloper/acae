@@ -6,8 +6,376 @@
 
 body {
   margin: 0;
-  font-family: var(--p-font-family, system-ui, sans-serif);
+  font-family: 'Inter', system-ui, sans-serif;
   font-size: 14px;
-  color: #1C1917;
-  background-color: #FFFFFF;
+  color: var(--text-1);
+  background-color: var(--bg-base);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+
+/* ── Page scaffold (used in all page components) ── */
+.page-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  height: 100%;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.page-header h2 {
+  margin: 0;
+  font-size: 1.1875rem;
+  font-weight: 700;
+  color: var(--text-1);
+  letter-spacing: -0.025em;
+}
+
+.page-header p {
+  margin: 0.125rem 0 0;
+  font-size: 0.8125rem;
+  color: var(--text-2);
+}
+
+/* ── Glass card ── */
+.glass-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  backdrop-filter: blur(12px);
+}
+
+/* ── PrimeVue overrides for dark tone ── */
+.p-datatable {
+  background: var(--bg-card) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 10px !important;
+  overflow: hidden;
+}
+
+.p-datatable .p-datatable-header,
+.p-datatable .p-datatable-thead > tr > th {
+  background: var(--bg-surface) !important;
+  color: var(--text-2) !important;
+  border-color: var(--border) !important;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.p-datatable .p-datatable-tbody > tr {
+  background: var(--bg-card) !important;
+  color: var(--text-1) !important;
+  border-color: var(--border) !important;
+  transition: background 0.12s;
+}
+
+.p-datatable .p-datatable-tbody > tr:hover {
+  background: var(--bg-hover) !important;
+}
+
+.p-dialog {
+  background: var(--bg-card) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.6) !important;
+}
+
+.p-dialog .p-dialog-header {
+  background: var(--bg-card) !important;
+  border-bottom: 1px solid var(--border) !important;
+  color: var(--text-1) !important;
+  border-radius: 12px 12px 0 0 !important;
+}
+
+.p-dialog .p-dialog-content {
+  background: var(--bg-card) !important;
+  color: var(--text-1) !important;
+}
+
+.p-dialog .p-dialog-footer {
+  background: var(--bg-card) !important;
+  border-top: 1px solid var(--border) !important;
+  border-radius: 0 0 12px 12px !important;
+}
+
+.p-inputtext, .p-select, .p-textarea, .p-multiselect {
+  background: var(--bg-surface) !important;
+  border-color: var(--border-hover) !important;
+  color: var(--text-1) !important;
+  border-radius: 8px !important;
+}
+
+.p-inputtext:focus, .p-select:focus {
+  border-color: var(--acae-primary) !important;
+  box-shadow: 0 0 0 3px var(--acae-primary-dim) !important;
+}
+
+.p-tag {
+  border-radius: 6px !important;
+  font-size: 0.6875rem !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.03em !important;
+}
+
+.p-button {
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+  transition: all 0.22s cubic-bezier(0.4,0,0.2,1) !important;
+  background-image: none !important;
+  position: relative !important;
+  overflow: hidden !important;
+}
+.p-button::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.10) 100%);
+  opacity: 0;
+  transition: opacity 0.25s ease;
+  pointer-events: none;
+  border-radius: inherit;
+}
+.p-button:hover::after {
+  opacity: 1;
+}
+.p-button:not(.p-button-text):not(.p-button-outlined) {
+  background: linear-gradient(135deg, var(--acae-primary) 0%, #a78bfa 100%) !important;
+  border: none !important;
+  box-shadow: 0 0 0 0 var(--acae-primary-glow) !important;
+  transition: box-shadow 0.28s, transform 0.18s, background-size 0.35s !important;
+}
+.p-button:not(.p-button-text):not(.p-button-outlined):hover {
+  box-shadow: 0 0 18px var(--acae-primary-glow) !important;
+  transform: translateY(-1px) !important;
+}
+.p-button:not(.p-button-text):not(.p-button-outlined):active {
+  transform: translateY(0) !important;
+  box-shadow: 0 0 10px var(--acae-primary-glow) !important;
+}
+
+/* ── Glass card hover effects ── */
+.glass-card {
+  transition: box-shadow 0.25s, border-color 0.25s, transform 0.2s;
+}
+.glass-card:hover {
+  border-color: rgba(139, 92, 246, 0.25) !important;
+  box-shadow: 0 4px 28px rgba(139, 92, 246, 0.12);
+  transform: translateY(-2px);
+}
+
+/* ── DataTable row gradient hover ── */
+.p-datatable .p-datatable-tbody > tr {
+  transition: background 0.18s, transform 0.15s !important;
+}
+.p-datatable .p-datatable-tbody > tr:hover {
+  background: linear-gradient(90deg, rgba(139,92,246,0.06) 0%, rgba(139,92,246,0.02) 100%) !important;
+}
+
+/* ── Card detail row hover ── */
+.card-campo {
+  transition: background 0.18s;
+  border-radius: 6px;
+  padding: 0.2rem 0.4rem;
+}
+.card-campo:hover {
+  background: var(--bg-hover);
+}
+
+/* ── Cursor pointer for clickable rows ── */
+.cursor-pointer-rows .p-datatable-tbody > tr {
+  cursor: pointer;
+}
+
+/* ── Paginator dark ── */
+.p-paginator {
+  background: var(--bg-surface) !important;
+  border: none !important;
+  border-top: 1px solid var(--border) !important;
+  color: var(--text-2) !important;
+  padding: 0.625rem 1rem !important;
+  border-radius: 0 0 10px 10px !important;
+}
+.p-paginator .p-paginator-page,
+.p-paginator .p-paginator-prev,
+.p-paginator .p-paginator-next,
+.p-paginator .p-paginator-first,
+.p-paginator .p-paginator-last {
+  color: var(--text-2) !important;
+  border-radius: 6px !important;
+  min-width: 2rem !important;
+  height: 2rem !important;
+  transition: background 0.15s !important;
+}
+.p-paginator .p-paginator-page:hover,
+.p-paginator .p-paginator-prev:hover,
+.p-paginator .p-paginator-next:hover,
+.p-paginator .p-paginator-first:hover,
+.p-paginator .p-paginator-last:hover {
+  background: var(--bg-hover) !important;
+  color: var(--text-1) !important;
+}
+.p-paginator .p-paginator-page.p-highlight {
+  background: var(--acae-primary) !important;
+  color: #fff !important;
+  box-shadow: 0 0 10px var(--acae-primary-glow) !important;
+}
+.p-paginator .p-select,
+.p-paginator .p-dropdown {
+  background: var(--bg-card) !important;
+  border-color: var(--border-hover) !important;
+  color: var(--text-1) !important;
+}
+.p-paginator .p-paginator-rpp-options,
+.p-paginator .p-paginator-current {
+  color: var(--text-3) !important;
+  font-size: 0.8125rem !important;
+}
+
+/* ── DatePicker/Calendar panel dark ── */
+.p-datepicker-panel,
+.p-datepicker {
+  background: var(--bg-card) !important;
+  border: 1px solid var(--border-hover) !important;
+  border-radius: 10px !important;
+  color: var(--text-1) !important;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5) !important;
+}
+.p-datepicker-header,
+.p-datepicker .p-datepicker-header {
+  background: var(--bg-surface) !important;
+  border-bottom: 1px solid var(--border) !important;
+  color: var(--text-1) !important;
+  border-radius: 10px 10px 0 0 !important;
+}
+.p-datepicker-header .p-datepicker-title,
+.p-datepicker-header button,
+.p-datepicker .p-datepicker-prev,
+.p-datepicker .p-datepicker-next {
+  color: var(--text-1) !important;
+}
+.p-datepicker-header button:hover,
+.p-datepicker .p-datepicker-prev:hover,
+.p-datepicker .p-datepicker-next:hover {
+  background: var(--bg-hover) !important;
+  border-radius: 6px !important;
+}
+.p-datepicker-day-view th,
+.p-datepicker .p-datepicker-calendar thead th {
+  color: var(--text-3) !important;
+  font-size: 0.75rem !important;
+}
+.p-datepicker-day-view td,
+.p-datepicker .p-datepicker-calendar td {
+  color: var(--text-1) !important;
+}
+.p-datepicker-day,
+.p-datepicker .p-datepicker-calendar td span {
+  border-radius: 6px !important;
+  color: var(--text-1) !important;
+  transition: background 0.12s !important;
+}
+.p-datepicker-day:hover,
+.p-datepicker .p-datepicker-calendar td span:not(.p-highlight):hover {
+  background: var(--bg-hover) !important;
+}
+.p-datepicker-day.p-datepicker-today span,
+.p-datepicker .p-datepicker-calendar td.p-datepicker-today span {
+  background: var(--acae-primary-dim) !important;
+  color: var(--acae-primary) !important;
+  font-weight: 700 !important;
+}
+.p-datepicker-day.p-highlight,
+.p-datepicker .p-datepicker-calendar td span.p-highlight {
+  background: var(--acae-primary) !important;
+  color: #fff !important;
+  box-shadow: 0 0 8px var(--acae-primary-glow) !important;
+}
+.p-datepicker .p-datepicker-other-month span {
+  color: var(--text-3) !important;
+}
+/* DatePicker trigger button (showIcon) */
+.p-datepicker-input-icon-container > input,
+.p-datepicker > input {
+  border-right: 1px solid var(--border-hover) !important;
+  border-radius: 8px 0 0 8px !important;
+}
+/* PrimeVue 4.x uses .p-datepicker-dropdown for the calendar icon button */
+.p-datepicker-dropdown,
+.p-datepicker-dropdown.p-button,
+.p-datepicker-button,
+.p-datepicker .p-datepicker-trigger {
+  border-radius: 0 8px 8px 0 !important;
+  background: var(--bg-surface) !important;
+  border: 1px solid var(--border-hover) !important;
+  border-left: none !important;
+  color: var(--text-2) !important;
+  box-shadow: none !important;
+}
+.p-datepicker-dropdown:hover,
+.p-datepicker-dropdown.p-button:hover,
+.p-datepicker-button:hover,
+.p-datepicker .p-datepicker-trigger:hover {
+  background: var(--bg-hover) !important;
+  color: var(--text-1) !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+/* ── Period Tag overrides globally ── */
+.p-tag.p-tag-info { background: rgba(14,165,233,0.15) !important; color: #38bdf8 !important; }
+.p-tag.p-tag-warn,
+.p-tag.p-tag-warning { background: rgba(245,158,11,0.15) !important; color: #fbbf24 !important; }
+.p-tag.p-tag-success { background: rgba(16,185,129,0.15) !important; color: #34d399 !important; }
+.p-tag.p-tag-danger { background: rgba(239,68,68,0.15) !important; color: #f87171 !important; }
+.p-tag.p-tag-secondary { background: var(--bg-overlay) !important; color: var(--text-2) !important; }
+
+/* ── Select/Dropdown option panel dark ── */
+.p-select-overlay,
+.p-dropdown-panel,
+.p-listbox {
+  background: var(--bg-card) !important;
+  border: 1px solid var(--border-hover) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5) !important;
+}
+.p-select-option,
+.p-dropdown-item {
+  color: var(--text-2) !important;
+  transition: background 0.12s !important;
+}
+.p-select-option:hover,
+.p-dropdown-item:hover {
+  background: var(--bg-hover) !important;
+  color: var(--text-1) !important;
+}
+.p-select-option.p-highlight,
+.p-dropdown-item.p-highlight {
+  background: var(--acae-primary-dim) !important;
+  color: var(--acae-primary) !important;
+}
+
+/* ── Striped rows dark ── */
+.p-datatable-striped .p-datatable-tbody > tr:nth-child(even) {
+  background: rgba(255,255,255,0.02) !important;
+}
+
+/* ── Scoped page dark helpers (global) ── */
+.page-header h2 { color: var(--acae-primary); }
+.page-header p { color: var(--text-2); margin: 0.125rem 0 0; font-size: 0.8125rem; }
+

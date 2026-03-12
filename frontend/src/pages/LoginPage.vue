@@ -217,7 +217,7 @@ async function handleGoogle() {
   display: flex;
   border-radius: 8px;
   overflow: hidden;
-  border: 1.5px solid #e5e7eb;
+  border: 1px solid var(--border);
   margin-bottom: 1.25rem;
 }
 .tab {
@@ -226,13 +226,14 @@ async function handleGoogle() {
   font-size: 0.875rem;
   font-weight: 600;
   border: none;
-  background: #fff;
-  color: #6b7280;
+  background: var(--bg-card);
+  color: var(--text-3);
   cursor: pointer;
   transition: background 0.15s, color 0.15s;
 }
+.tab:hover { background: var(--bg-hover); color: var(--text-1); }
 .tab.active {
-  background: #7c3aed;
+  background: var(--acae-primary);
   color: #fff;
 }
 
@@ -243,21 +244,21 @@ async function handleGoogle() {
   gap: 0.625rem;
   width: 100%;
   padding: 0.625rem 1rem;
-  border: 1.5px solid #d1d5db;
+  border: 1px solid var(--border-hover);
   border-radius: 8px;
-  background: #fff;
+  background: var(--bg-card);
   font-size: 0.875rem;
   font-weight: 500;
-  color: #374151;
+  color: var(--text-1);
   cursor: pointer;
   transition: background 0.15s, border-color 0.15s;
 }
 .google-btn:hover:not(:disabled) {
-  background: #f9fafb;
-  border-color: #9ca3af;
+  background: var(--bg-hover);
+  border-color: rgba(255,255,255,0.2);
 }
 .google-btn:disabled {
-  opacity: 0.6;
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
@@ -266,7 +267,7 @@ async function handleGoogle() {
   align-items: center;
   gap: 0.75rem;
   margin: 1rem 0;
-  color: #9ca3af;
+  color: var(--text-3);
   font-size: 0.8125rem;
 }
 .divider::before,
@@ -274,7 +275,7 @@ async function handleGoogle() {
   content: '';
   flex: 1;
   height: 1px;
-  background: #e5e7eb;
+  background: var(--border);
 }
 
 .auth-form {
@@ -290,7 +291,7 @@ async function handleGoogle() {
 .field label {
   font-size: 0.875rem;
   font-weight: 500;
-  color: #374151;
+  color: var(--text-2);
 }
 .field-row {
   display: flex;
@@ -302,7 +303,7 @@ async function handleGoogle() {
   align-items: center;
   gap: 0.5rem;
   font-size: 0.875rem;
-  color: #374151;
+  color: var(--text-2);
 }
 .mb-0 {
   margin-bottom: 0;

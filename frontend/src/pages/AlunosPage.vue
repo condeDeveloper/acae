@@ -5,30 +5,31 @@
         <h2>Alunos</h2>
         <p>Gerencie os alunos das suas turmas</p>
       </div>
-      <Button label="Novo Aluno" icon="pi pi-plus" @click="abrirDialogNovo" :disabled="modoFiltro === 'turma' && !turmaSelecionada" />
+      <Button label="Novo Aluno" icon="pi pi-plus" @click="abrirDialogNovo" />
     </div>
 
     <!-- Filtro: Todos / Por Turma -->
     <div class="filtro-bar">
-      <div class="modo-toggle">
-        <button
-          :class="['toggle-btn', modoFiltro === 'todos' ? 'toggle-btn--active' : '']"
-          @click="modoFiltro = 'todos'"
-        >Todos</button>
-        <button
-          :class="['toggle-btn', modoFiltro === 'turma' ? 'toggle-btn--active' : '']"
-          @click="modoFiltro = 'turma'"
-        >Por Turma</button>
+      <div class="modo-switch" @click="toggleModo">
+        <span :class="['sw-opt', modoFiltro !== 'todos' ? 'sw-opt--dim' : '']">Todos</span>
+        <div :class="['sw-track', modoFiltro === 'turma' ? 'sw-track--on' : '']">
+          <div class="sw-knob"></div>
+        </div>
+        <span :class="['sw-opt', modoFiltro !== 'turma' ? 'sw-opt--dim' : '']">Por Turma</span>
       </div>
 
       <Select
-        v-if="modoFiltro === 'turma'"
         v-model="turmaSelecionada"
         :options="turmas"
         optionLabel="nome"
         optionValue="id"
         placeholder="Selecione uma turma"
-        style="min-width: 260px"
+        :style="{
+          minWidth: '260px',
+          opacity: modoFiltro === 'turma' ? 1 : 0,
+          pointerEvents: modoFiltro === 'turma' ? 'auto' : 'none',
+          transition: 'opacity 0.2s'
+        }"
       />
     </div>
 
@@ -40,6 +41,9 @@
       emptyMessage="Nenhum aluno encontrado."
       sortField="turma_nome"
       :sortOrder="1"
+      :paginator="alunosFiltrados.length > 10"
+      :rows="10"
+      :rowsPerPageOptions="[10, 25, 50]"
       class="cursor-pointer-rows"
       @row-click="abrirCard($event.data)"
     >
@@ -231,11 +235,15 @@ watch(modoFiltro, (novo) => {
   if (novo === 'todos') turmaSelecionada.value = null
 })
 
+function toggleModo() {
+  modoFiltro.value = modoFiltro.value === 'todos' ? 'turma' : 'todos'
+}
+
 function abrirDialogNovo() {
   editando.value = null
   form.value = {
     nome: '',
-    turma_id: turmaSelecionada.value ?? (turmas.value[0]?.id ?? ''),
+    turma_id: turmaSelecionada.value ?? '',
     data_nascimento: null,
     necessidades_educacionais: '',
   }
@@ -315,8 +323,8 @@ onMounted(async () => {
   align-items: flex-start;
   margin-bottom: 1.25rem;
 }
-.page-header h2 { margin: 0 0 0.25rem; font-size: 1.5rem; color: #7c3aed; }
-.page-header p { margin: 0; color: #6b7280; font-size: 0.875rem; }
+.page-header h2 { margin: 0 0 0.25rem; font-size: 1.5rem; color: var(--acae-primary); }
+.page-header p { margin: 0; color: var(--text-2); font-size: 0.875rem; }
 .filtro-bar {
   display: flex;
   align-items: center;
@@ -324,35 +332,31 @@ onMounted(async () => {
   margin-bottom: 1.25rem;
   flex-wrap: wrap;
 }
-.modo-toggle {
-  display: flex;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  overflow: hidden;
+/* Switch roxo estilo iOS */
+.modo-switch { display: flex; align-items: center; gap: 0.625rem; cursor: pointer; user-select: none; }
+.sw-opt { font-size: 0.875rem; font-weight: 600; color: var(--text-2); transition: color 0.2s; }
+.sw-opt--dim { color: var(--text-3); font-weight: 400; }
+.sw-track {
+  width: 44px; height: 24px; border-radius: 12px;
+  background: var(--bg-overlay); border: 1px solid var(--border);
+  position: relative; transition: background 0.28s, border-color 0.28s;
 }
-.toggle-btn {
-  padding: 0.375rem 0.875rem;
-  font-size: 0.875rem;
-  border: none;
-  background: #fff;
-  cursor: pointer;
-  color: #374151;
-  transition: background 0.15s, color 0.15s;
+.sw-track--on { background: var(--acae-primary); border-color: var(--acae-primary); box-shadow: 0 0 10px var(--acae-primary-glow); }
+.sw-knob {
+  position: absolute; top: 3px; left: 3px;
+  width: 16px; height: 16px; border-radius: 50%;
+  background: #fff; transition: transform 0.28s cubic-bezier(0.4,0,0.2,1);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
 }
-.toggle-btn:hover { background: #f3f4f6; }
-.toggle-btn--active {
-  background: #7c3aed;
-  color: #fff;
-  font-weight: 600;
-}
+.sw-track--on .sw-knob { transform: translateX(20px); }
 .dialog-form { display: flex; flex-direction: column; gap: 1rem; padding: 0.5rem 0; }
 .field { display: flex; flex-direction: column; gap: 0.375rem; }
-.field label { font-size: 0.875rem; font-weight: 500; color: #374151; }
+.field label { font-size: 0.875rem; font-weight: 500; color: var(--text-2); }
 .card-detalhe { display: flex; flex-direction: column; gap: 0.875rem; padding: 0.25rem 0; }
-.card-nome { font-size: 1.25rem; font-weight: 700; color: #111827; margin-bottom: 0.25rem; }
+.card-nome { font-size: 1.25rem; font-weight: 700; color: var(--text-1); margin-bottom: 0.25rem; }
 .card-campo { display: flex; flex-direction: column; gap: 0.2rem; }
-.card-label { font-size: 0.75rem; font-weight: 600; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.05em; }
-.card-valor { font-size: 0.9375rem; color: #111827; white-space: pre-wrap; }
+.card-label { font-size: 0.75rem; font-weight: 600; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.05em; }
+.card-valor { font-size: 0.9375rem; color: var(--text-1); white-space: pre-wrap; }
 :deep(.cursor-pointer-rows .p-datatable-tbody > tr) { cursor: pointer; }
 </style>
 

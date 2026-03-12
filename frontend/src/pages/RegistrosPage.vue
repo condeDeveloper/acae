@@ -8,22 +8,18 @@
       <Button
         label="Novo Registro"
         icon="pi pi-plus"
-        :disabled="modoFiltro === 'todos' || !aluno_id"
         @click="abrirDialogNovo"
       />
     </div>
 
     <!-- Filtro: Todos / Por Turma -->
     <div class="filtro-bar">
-      <div class="modo-toggle">
-        <button
-          :class="['toggle-btn', modoFiltro === 'todos' ? 'toggle-btn--active' : '']"
-          @click="modoFiltro = 'todos'"
-        >Todos</button>
-        <button
-          :class="['toggle-btn', modoFiltro === 'turma' ? 'toggle-btn--active' : '']"
-          @click="modoFiltro = 'turma'"
-        >Por Turma</button>
+      <div class="modo-switch" @click="toggleModo">
+        <span :class="['sw-opt', modoFiltro !== 'todos' ? 'sw-opt--dim' : '']">Todos</span>
+        <div :class="['sw-track', modoFiltro === 'turma' ? 'sw-track--on' : '']">
+          <div class="sw-knob"></div>
+        </div>
+        <span :class="['sw-opt', modoFiltro !== 'turma' ? 'sw-opt--dim' : '']">Por Turma</span>
       </div>
 
       <template v-if="modoFiltro === 'turma'">
@@ -63,6 +59,9 @@
       sortField="periodo"
       :sortOrder="-1"
       emptyMessage="Nenhum registro encontrado."
+      :paginator="registros.length > 10"
+      :rows="10"
+      :rowsPerPageOptions="[10, 25, 50]"
       class="cursor-pointer-rows"
       @row-click="abrirCard($event.data)"
     >
@@ -129,6 +128,32 @@
       :closable="!salvando"
     >
       <div class="dialog-form" v-if="!loadingForm">
+        <template v-if="!editandoId">
+          <div class="field">
+            <label>Turma *</label>
+            <Select
+              v-model="form.turma_id"
+              :options="turmas"
+              optionLabel="nome"
+              optionValue="id"
+              placeholder="Selecione a turma"
+              fluid
+            />
+          </div>
+          <div class="field">
+            <label>Aluno *</label>
+            <Select
+              v-model="form.aluno_id"
+              :options="alunosDialog"
+              optionLabel="nome"
+              optionValue="id"
+              placeholder="Selecione o aluno"
+              :loading="loadingAlunosDialog"
+              :disabled="!form.turma_id"
+              fluid
+            />
+          </div>
+        </template>
         <div class="field">
           <label>Período (semana de referência) *</label>
           <DatePicker
@@ -251,22 +276,24 @@ interface RegistroFull extends Registro {
 const toast   = useToast()
 const confirm = useConfirm()
 
-const modoFiltro    = ref<'todos' | 'turma'>('todos')
-const turmas        = ref<Turma[]>([])
-const alunos        = ref<Aluno[]>([])
-const registros     = ref<Registro[]>([])
-const turma_id      = ref<string | null>(null)
-const aluno_id      = ref<string | null>(null)
-const loading       = ref(false)
-const loadingAlunos = ref(false)
-const loadingForm   = ref(false)
-const dialogVisible = ref(false)
-const salvando      = ref(false)
-const editandoId    = ref<string | null>(null)
-const erroDialog    = ref('')
-const cardVisible   = ref(false)
-const cardLoading   = ref(false)
-const cardRegistro  = ref<RegistroFull | null>(null)
+const modoFiltro         = ref<'todos' | 'turma'>('todos')
+const turmas             = ref<Turma[]>([])
+const alunos             = ref<Aluno[]>([])
+const alunosDialog       = ref<Aluno[]>([])
+const registros          = ref<Registro[]>([])
+const turma_id           = ref<string | null>(null)
+const aluno_id           = ref<string | null>(null)
+const loading            = ref(false)
+const loadingAlunos      = ref(false)
+const loadingAlunosDialog = ref(false)
+const loadingForm        = ref(false)
+const dialogVisible      = ref(false)
+const salvando           = ref(false)
+const editandoId         = ref<string | null>(null)
+const erroDialog         = ref('')
+const cardVisible        = ref(false)
+const cardLoading        = ref(false)
+const cardRegistro       = ref<RegistroFull | null>(null)
 
 async function abrirCard(registro: Registro) {
   cardRegistro.value = null
@@ -293,6 +320,8 @@ function calcularIdade(iso: string): number {
 }
 
 const form = ref({
+  turma_id:   '',
+  aluno_id:   '',
   periodo:    null as Date | null,
   bncc_refs:  [] as string[],
   objetivos:  '',
@@ -305,11 +334,13 @@ const formValido = computed(() =>
   !!form.value.periodo &&
   form.value.bncc_refs.length > 0 &&
   form.value.objetivos.trim().length >= 10 &&
-  form.value.atividades.trim().length >= 10,
+  form.value.atividades.trim().length >= 10 &&
+  (!editandoId.value ? !!(form.value.aluno_id || aluno_id.value) : true),
 )
 
 function resetForm() {
-  form.value = { periodo: null, bncc_refs: [], objetivos: '', atividades: '', mediacoes: '', ocorrencias: '' }
+  form.value = { turma_id: '', aluno_id: '', periodo: null, bncc_refs: [], objetivos: '', atividades: '', mediacoes: '', ocorrencias: '' }
+  alunosDialog.value = []
   erroDialog.value = ''
 }
 
@@ -379,6 +410,25 @@ watch(modoFiltro, (novo) => {
   }
 })
 
+watch(() => form.value.turma_id, async (tid) => {
+  form.value.aluno_id = ''
+  alunosDialog.value = []
+  if (!tid) return
+  loadingAlunosDialog.value = true
+  try {
+    const { data } = await api.get<{ data: Aluno[] }>(`/api/turmas/${tid}/alunos`)
+    alunosDialog.value = data.data
+  } catch {
+    /* silently fail */
+  } finally {
+    loadingAlunosDialog.value = false
+  }
+})
+
+function toggleModo() {
+  modoFiltro.value = modoFiltro.value === 'todos' ? 'turma' : 'todos'
+}
+
 watch(turma_id, (novoId) => {
   aluno_id.value = null
   alunos.value = []
@@ -394,6 +444,11 @@ watch(aluno_id, (novoId) => {
 function abrirDialogNovo() {
   editandoId.value = null
   resetForm()
+  // prefill turma/aluno if currently filtering by turma
+  if (modoFiltro.value === 'turma' && turma_id.value) {
+    form.value.turma_id = turma_id.value
+    if (aluno_id.value) form.value.aluno_id = aluno_id.value
+  }
   dialogVisible.value = true
 }
 
@@ -440,12 +495,14 @@ async function salvar() {
       await api.patch(`/api/registros/${editandoId.value}`, payload)
       toast.add({ severity: 'success', summary: 'Registro atualizado', life: 3000 })
     } else {
-      await api.post(`/api/alunos/${aluno_id.value}/registros`, payload)
+      const targetAlunoId = form.value.aluno_id || aluno_id.value
+      await api.post(`/api/alunos/${targetAlunoId}/registros`, payload)
       toast.add({ severity: 'success', summary: 'Registro criado', life: 3000 })
     }
     dialogVisible.value = false
     if (modoFiltro.value === 'todos') await carregarTodos()
     else if (aluno_id.value) await carregarRegistros(aluno_id.value)
+    else await carregarTodos()
   } catch (err: unknown) {
     const e = err as { response?: { data?: { error?: string; message?: string } } }
     const msg = e?.response?.data?.message ?? e?.response?.data?.error ?? 'Erro ao salvar registro.'
@@ -491,8 +548,8 @@ onMounted(async () => {
   align-items: flex-start;
   margin-bottom: 1.5rem;
 }
-.page-header h2 { margin: 0 0 0.25rem; font-size: 1.5rem; color: #7c3aed; }
-.page-header p  { margin: 0; color: #6b7280; }
+.page-header h2 { margin: 0 0 0.25rem; font-size: 1.5rem; color: var(--acae-primary); }
+.page-header p  { margin: 0; color: var(--text-2); }
 
 .filtro-bar {
   display: flex;
@@ -501,27 +558,23 @@ onMounted(async () => {
   margin-bottom: 1.25rem;
   flex-wrap: wrap;
 }
-.modo-toggle {
-  display: flex;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  overflow: hidden;
+/* Switch roxo estilo iOS */
+.modo-switch { display: flex; align-items: center; gap: 0.625rem; cursor: pointer; user-select: none; }
+.sw-opt { font-size: 0.875rem; font-weight: 600; color: var(--text-2); transition: color 0.2s; }
+.sw-opt--dim { color: var(--text-3); font-weight: 400; }
+.sw-track {
+  width: 44px; height: 24px; border-radius: 12px;
+  background: var(--bg-overlay); border: 1px solid var(--border);
+  position: relative; transition: background 0.28s, border-color 0.28s;
 }
-.toggle-btn {
-  padding: 0.375rem 0.875rem;
-  font-size: 0.875rem;
-  border: none;
-  background: #fff;
-  cursor: pointer;
-  color: #374151;
-  transition: background 0.15s, color 0.15s;
+.sw-track--on { background: var(--acae-primary); border-color: var(--acae-primary); box-shadow: 0 0 10px var(--acae-primary-glow); }
+.sw-knob {
+  position: absolute; top: 3px; left: 3px;
+  width: 16px; height: 16px; border-radius: 50%;
+  background: #fff; transition: transform 0.28s cubic-bezier(0.4,0,0.2,1);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
 }
-.toggle-btn:hover { background: #f3f4f6; }
-.toggle-btn--active {
-  background: #7c3aed;
-  color: #fff;
-  font-weight: 600;
-}
+.sw-track--on .sw-knob { transform: translateX(20px); }
 .field-inline {
   display: flex;
   flex-direction: column;
@@ -530,7 +583,7 @@ onMounted(async () => {
 .field-inline label {
   font-size: 0.8125rem;
   font-weight: 500;
-  color: #374151;
+  color: var(--text-2);
 }
 
 .dialog-form { display: flex; flex-direction: column; gap: 0.25rem; }
@@ -540,9 +593,9 @@ onMounted(async () => {
   gap: 0.375rem;
   margin-bottom: 0.875rem;
 }
-.field label { font-size: 0.875rem; font-weight: 500; color: #374151; }
-.char-count  { font-size: 0.75rem; color: #9ca3af; align-self: flex-end; }
-.bncc-count  { font-size: 0.8125rem; color: #6b7280; }
+.field label { font-size: 0.875rem; font-weight: 500; color: var(--text-2); }
+.char-count  { font-size: 0.75rem; color: var(--text-3); align-self: flex-end; }
+.bncc-count  { font-size: 0.8125rem; color: var(--text-2); }
 
 .loading-form {
   display: flex;
@@ -550,17 +603,17 @@ onMounted(async () => {
   align-items: center;
   gap: 0.75rem;
   padding: 2rem 0;
-  color: #6b7280;
+  color: var(--text-2);
 }
 
 .mt-2 { margin-top: 0.5rem; }
 
 .card-detalhe { display: flex; flex-direction: column; gap: 0.875rem; padding: 0.25rem 0; }
-.card-section-aluno { padding-bottom: 0.5rem; border-bottom: 1px solid #e5e7eb; margin-bottom: 0.25rem; }
-.card-nome { font-size: 1.25rem; font-weight: 700; color: #111827; }
-.card-nascimento { font-size: 0.9rem; color: #6b7280; margin-top: 0.15rem; }
+.card-section-aluno { padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); margin-bottom: 0.25rem; }
+.card-nome { font-size: 1.25rem; font-weight: 700; color: var(--text-1); }
+.card-nascimento { font-size: 0.9rem; color: var(--text-2); margin-top: 0.15rem; }
 .card-campo { display: flex; flex-direction: column; gap: 0.2rem; }
-.card-label { font-size: 0.75rem; font-weight: 600; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.05em; }
-.card-valor { font-size: 0.9375rem; color: #111827; white-space: pre-wrap; }
+.card-label { font-size: 0.75rem; font-weight: 600; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.05em; }
+.card-valor { font-size: 0.9375rem; color: var(--text-1); white-space: pre-wrap; }
 :deep(.cursor-pointer-rows .p-datatable-tbody > tr) { cursor: pointer; }
 </style>

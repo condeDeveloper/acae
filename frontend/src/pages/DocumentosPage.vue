@@ -121,14 +121,14 @@ onMounted(async () => {
 <style scoped>
 .page-container { padding: 1rem; }
 .page-header { margin-bottom: 1.5rem; }
-.page-header h2 { margin: 0 0 0.25rem; font-size: 1.5rem; color: #7c3aed; }
-.page-header p { margin: 0; color: #6b7280; }
+.page-header h2 { margin: 0 0 0.25rem; font-size: 1.5rem; color: var(--acae-primary); }
+.page-header p { margin: 0; color: var(--text-2); }
 .doc-info { display: flex; flex-direction: column; gap: 0.875rem; padding: 0.25rem 0; }
 .doc-campo { display: flex; flex-direction: column; gap: 0.2rem; }
-.doc-label { font-size: 0.75rem; font-weight: 600; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.05em; }
-.doc-valor { font-size: 0.9375rem; color: #111827; }
-.doc-download { margin-top: 0.5rem; padding-top: 1rem; border-top: 1px solid #e5e7eb; }
-.doc-download-label { margin: 0 0 0.75rem; font-size: 0.875rem; font-weight: 500; color: #374151; }
+.doc-label { font-size: 0.75rem; font-weight: 600; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.05em; }
+.doc-valor { font-size: 0.9375rem; color: var(--text-1); }
+.doc-download { margin-top: 0.5rem; padding-top: 1rem; border-top: 1px solid var(--border); }
+.doc-download-label { margin: 0 0 0.75rem; font-size: 0.875rem; font-weight: 500; color: var(--text-2); }
 .formato-dialog { display: flex; justify-content: center; padding: 0.5rem 0 0.25rem; }
 :deep(.cursor-pointer-rows .p-datatable-tbody > tr) { cursor: pointer; }
 </style>
