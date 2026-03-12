@@ -16,6 +16,8 @@
       sortField="nome"
       :sortOrder="1"
       emptyMessage="Nenhuma turma cadastrada. Clique em 'Nova Turma' para começar."
+      class="cursor-pointer-rows"
+      @row-click="abrirCard($event.data)"
     >
       <Column field="nome" header="Nome da Turma" sortable />
       <Column field="ano_letivo" header="Ano Letivo" sortable style="width:110px" />
@@ -28,10 +30,25 @@
       <Column field="total_alunos" header="Alunos" sortable style="width:80px;text-align:center" />
       <Column header="Ações" style="width:80px">
         <template #body="{ data }">
-          <Button icon="pi pi-pencil" text rounded @click="abrirDialogEditar(data)" />
+          <Button icon="pi pi-pencil" text rounded @click.stop="abrirDialogEditar(data)" />
         </template>
       </Column>
     </DataTable>
+
+    <!-- Card Turma -->
+    <Dialog v-model:visible="cardVisible" header="Detalhes da Turma" modal :style="{ width: '400px' }">
+      <div v-if="cardTurma" class="card-detalhe">
+        <div class="card-campo"><span class="card-label">Nome</span><span class="card-valor">{{ cardTurma.nome }}</span></div>
+        <div class="card-campo"><span class="card-label">Ano Letivo</span><span class="card-valor">{{ cardTurma.ano_letivo }}</span></div>
+        <div class="card-campo"><span class="card-label">Turno</span><span class="card-valor"><Tag :value="turnoLabel(cardTurma.turno)" :severity="turnoSeverity(cardTurma.turno)" /></span></div>
+        <div class="card-campo"><span class="card-label">Escola</span><span class="card-valor">{{ cardTurma.escola }}</span></div>
+        <div class="card-campo"><span class="card-label">Total de Alunos</span><span class="card-valor">{{ cardTurma.total_alunos }}</span></div>
+      </div>
+      <template #footer>
+        <Button label="Fechar" text @click="cardVisible = false" />
+        <Button label="Editar" icon="pi pi-pencil" @click="cardVisible = false; abrirDialogEditar(cardTurma!)" />
+      </template>
+    </Dialog>
 
     <!-- Dialog Nova / Editar Turma -->
     <Dialog
@@ -112,6 +129,13 @@ const loading = ref(false)
 const dialogVisible = ref(false)
 const salvando = ref(false)
 const editando = ref<Turma | null>(null)
+const cardVisible = ref(false)
+const cardTurma = ref<Turma | null>(null)
+
+function abrirCard(turma: Turma) {
+  cardTurma.value = turma
+  cardVisible.value = true
+}
 
 const form = ref({ nome: '', ano_letivo: new Date().getFullYear(), turno: '', escola: '' })
 
@@ -206,5 +230,10 @@ onMounted(carregar)
 .dialog-form { display: flex; flex-direction: column; gap: 1rem; padding: 0.5rem 0; }
 .field { display: flex; flex-direction: column; gap: 0.375rem; }
 .field label { font-size: 0.875rem; font-weight: 500; color: #374151; }
+.card-detalhe { display: flex; flex-direction: column; gap: 0.875rem; padding: 0.25rem 0; }
+.card-campo { display: flex; flex-direction: column; gap: 0.2rem; }
+.card-label { font-size: 0.75rem; font-weight: 600; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.05em; }
+.card-valor { font-size: 0.9375rem; color: #111827; }
+:deep(.cursor-pointer-rows .p-datatable-tbody > tr) { cursor: pointer; }
 </style>
 

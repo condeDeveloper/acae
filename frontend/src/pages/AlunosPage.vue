@@ -40,6 +40,8 @@
       emptyMessage="Nenhum aluno encontrado."
       sortField="turma_nome"
       :sortOrder="1"
+      class="cursor-pointer-rows"
+      @row-click="abrirCard($event.data)"
     >
       <Column field="nome" header="Nome" sortable />
       <Column field="turma_nome" header="Turma" sortable style="width:170px" />
@@ -55,11 +57,33 @@
       </Column>
       <Column header="Ações" style="width:100px">
         <template #body="{ data }">
-          <Button icon="pi pi-pencil" text rounded @click="abrirDialogEditar(data)" />
-          <Button icon="pi pi-trash" text rounded severity="danger" @click="confirmarExcluir(data)" />
+          <Button icon="pi pi-pencil" text rounded @click.stop="abrirDialogEditar(data)" />
+          <Button icon="pi pi-trash" text rounded severity="danger" @click.stop="confirmarExcluir(data)" />
         </template>
       </Column>
     </DataTable>
+
+    <!-- Card Aluno -->
+    <Dialog v-model:visible="cardVisible" header="Detalhes do Aluno" modal :style="{ width: '420px' }">
+      <div v-if="cardAluno" class="card-detalhe">
+        <div class="card-nome">{{ cardAluno.nome }}</div>
+        <div class="card-campo"><span class="card-label">Turma</span><span class="card-valor">{{ cardAluno.turma_nome }}</span></div>
+        <div class="card-campo">
+          <span class="card-label">Nascimento</span>
+          <span class="card-valor">
+            {{ cardAluno.data_nascimento ? formatarData(cardAluno.data_nascimento) + ' (' + calcularIdade(cardAluno.data_nascimento) + ' anos)' : '—' }}
+          </span>
+        </div>
+        <div class="card-campo">
+          <span class="card-label">Necessidades Educacionais Especiais</span>
+          <span class="card-valor">{{ cardAluno.necessidades_educacionais || '—' }}</span>
+        </div>
+      </div>
+      <template #footer>
+        <Button label="Fechar" text @click="cardVisible = false" />
+        <Button label="Editar" icon="pi pi-pencil" @click="cardVisible = false; abrirDialogEditar(cardAluno!)" />
+      </template>
+    </Dialog>
 
     <!-- Dialog Novo / Editar Aluno -->
     <Dialog
@@ -150,6 +174,22 @@ const turmaSelecionada = ref<string | null>(null)
 const dialogVisible = ref(false)
 const salvando = ref(false)
 const editando = ref<Aluno | null>(null)
+const cardVisible = ref(false)
+const cardAluno = ref<Aluno | null>(null)
+
+function abrirCard(aluno: Aluno) {
+  cardAluno.value = aluno
+  cardVisible.value = true
+}
+
+function calcularIdade(iso: string): number {
+  const nasc = new Date(iso)
+  const hoje = new Date()
+  let idade = hoje.getFullYear() - nasc.getFullYear()
+  const m = hoje.getMonth() - nasc.getMonth()
+  if (m < 0 || (m === 0 && hoje.getDate() < nasc.getDate())) idade--
+  return idade
+}
 
 const form = ref<{
   nome: string
@@ -308,6 +348,12 @@ onMounted(async () => {
 .dialog-form { display: flex; flex-direction: column; gap: 1rem; padding: 0.5rem 0; }
 .field { display: flex; flex-direction: column; gap: 0.375rem; }
 .field label { font-size: 0.875rem; font-weight: 500; color: #374151; }
+.card-detalhe { display: flex; flex-direction: column; gap: 0.875rem; padding: 0.25rem 0; }
+.card-nome { font-size: 1.25rem; font-weight: 700; color: #111827; margin-bottom: 0.25rem; }
+.card-campo { display: flex; flex-direction: column; gap: 0.2rem; }
+.card-label { font-size: 0.75rem; font-weight: 600; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.05em; }
+.card-valor { font-size: 0.9375rem; color: #111827; white-space: pre-wrap; }
+:deep(.cursor-pointer-rows .p-datatable-tbody > tr) { cursor: pointer; }
 </style>
 
 

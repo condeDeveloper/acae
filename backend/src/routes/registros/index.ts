@@ -21,7 +21,7 @@ export default async function registrosRoutes(fastify: FastifyInstance) {
           bncc_refs: true,
           created_at: true,
           updated_at: true,
-          aluno: { select: { id: true, nome: true } },
+          aluno: { select: { id: true, nome: true, data_nascimento: true } },
           turma: { select: { id: true, nome: true } },
         },
       })
@@ -35,6 +35,7 @@ export default async function registrosRoutes(fastify: FastifyInstance) {
           updated_at: r.updated_at,
           aluno_id: r.aluno.id,
           aluno_nome: r.aluno.nome,
+          aluno_data_nascimento: r.aluno.data_nascimento,
           turma_id: r.turma.id,
           turma_nome: r.turma.nome,
         })),
@@ -192,6 +193,10 @@ export default async function registrosRoutes(fastify: FastifyInstance) {
           id: registroId,
           turma: { professor_id: professor.id },
         },
+        include: {
+          aluno: { select: { nome: true, data_nascimento: true } },
+          turma: { select: { nome: true } },
+        },
       })
       if (!registro) {
         return reply.code(404).send({ error: 'Registro não encontrado' })
@@ -206,7 +211,10 @@ export default async function registrosRoutes(fastify: FastifyInstance) {
         ocorrencias: registro.ocorrencias,
         bncc_refs: registro.bncc_refs,
         aluno_id: registro.aluno_id,
+        aluno_nome: registro.aluno.nome,
+        aluno_data_nascimento: registro.aluno.data_nascimento,
         turma_id: registro.turma_id,
+        turma_nome: registro.turma.nome,
         created_at: registro.created_at,
         updated_at: registro.updated_at,
       })

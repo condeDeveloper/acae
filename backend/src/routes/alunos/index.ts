@@ -26,6 +26,7 @@ export default async function alunosRoutes(fastify: FastifyInstance) {
           nome: a.nome,
           turma_id: a.turma_id,
           turma_nome: a.turma.nome,
+          data_nascimento: a.data_nascimento,
           necessidades_educacionais: a.necessidades_educacionais,
         })),
         total: alunos.length,

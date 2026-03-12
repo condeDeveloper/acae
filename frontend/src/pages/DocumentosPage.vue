@@ -11,11 +11,20 @@
       paginator
       :rows="20"
       :rowsPerPageOptions="[10, 20, 50]"
+      sortField="finalizado_em"
+      :sortOrder="-1"
       emptyMessage="Nenhum documento encontrado"
     >
-      <Column field="tipo" header="Tipo" />
-      <Column field="periodo" header="Período" />
-      <Column field="finalizado_em" header="Data" />
+      <Column field="aluno_nome" header="Aluno" sortable />
+      <Column field="tipo" header="Tipo" sortable>
+        <template #body="{ data }">{{ tipoLabel(data.tipo) }}</template>
+      </Column>
+      <Column field="periodo" header="Período" sortable />
+      <Column field="finalizado_em" header="Data" sortable>
+        <template #body="{ data }">
+          {{ data.finalizado_em ? new Date(data.finalizado_em).toLocaleDateString('pt-BR') : '—' }}
+        </template>
+      </Column>
       <Column header="Download">
         <template #body="{ data }">
           <BotaoExportar :rascunho-id="data.rascunho_id" />
@@ -32,14 +41,36 @@ import Column from 'primevue/column'
 import BotaoExportar from '@/components/BotaoExportar.vue'
 import api from '@/services/api'
 
-const documentos = ref<Record<string, unknown>[]>([])
+interface Documento {
+  id: string
+  rascunho_id: string
+  tipo: string
+  aluno_nome: string | null
+  numero_versao: number
+  periodo: string
+  finalizado_em: string | null
+  created_at: string
+}
+
+const documentos = ref<Documento[]>([])
 const loading = ref(false)
+
+const TIPO_LABELS: Record<string, string> = {
+  relatorio_individual: 'Relatório Individual',
+  portfolio_mensal: 'Portfólio Mensal',
+  plano_aula: 'Plano de Aula',
+  ata_reuniao: 'Ata de Reunião',
+}
+
+function tipoLabel(tipo: string) {
+  return TIPO_LABELS[tipo] ?? tipo
+}
 
 onMounted(async () => {
   loading.value = true
   try {
-    const { data } = await api.get('/api/documentos')
-    documentos.value = data
+    const { data } = await api.get<{ data: Documento[] }>('/api/documentos')
+    documentos.value = data.data
   } catch {
     /* handled by interceptor */
   } finally {

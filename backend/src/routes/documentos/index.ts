@@ -64,4 +64,37 @@ export default async function documentosRoutes(fastify: FastifyInstance) {
       })
     }
   )
+
+  // GET /api/documentos — todos os documentos finalizados do professor
+  fastify.get(
+    '/api/documentos',
+    { preHandler: [fastify.authenticate] },
+    async (request, reply) => {
+      const professor = request.professor
+
+      const versoes = await prisma.versaoDocumento.findMany({
+        where: { professor_id: professor.id },
+        include: {
+          rascunho: { select: { tipo: true } },
+          aluno: { select: { nome: true } },
+        },
+        orderBy: { finalizado_em: 'desc' },
+        take: 100,
+      })
+
+      return reply.code(200).send({
+        data: versoes.map((v: typeof versoes[number]) => ({
+          id: v.id,
+          rascunho_id: v.rascunho_id,
+          tipo: v.rascunho.tipo,
+          aluno_nome: v.aluno?.nome ?? null,
+          numero_versao: v.numero_versao,
+          periodo: v.periodo,
+          finalizado_em: v.finalizado_em,
+          created_at: v.created_at,
+        })),
+        total: versoes.length,
+      })
+    }
+  )
 }

@@ -63,6 +63,8 @@
       sortField="periodo"
       :sortOrder="-1"
       emptyMessage="Nenhum registro encontrado."
+      class="cursor-pointer-rows"
+      @row-click="abrirCard($event.data)"
     >
       <Column v-if="modoFiltro === 'todos'" field="aluno_nome" header="Aluno" sortable style="min-width: 150px" />
       <Column v-if="modoFiltro === 'todos'" field="turma_nome" header="Turma" sortable style="min-width: 150px" />
@@ -83,11 +85,40 @@
       </Column>
       <Column header="Ações" style="width: 100px">
         <template #body="{ data }">
-          <Button icon="pi pi-pencil" text rounded @click="abrirDialogEditar(data.id)" />
-          <Button icon="pi pi-trash" text rounded severity="danger" @click="confirmarExcluir(data)" />
+          <Button icon="pi pi-pencil" text rounded @click.stop="abrirDialogEditar(data.id)" />
+          <Button icon="pi pi-trash" text rounded severity="danger" @click.stop="confirmarExcluir(data)" />
         </template>
       </Column>
     </DataTable>
+
+    <!-- Card Registro -->
+    <Dialog v-model:visible="cardVisible" header="Detalhes do Registro" modal :style="{ width: '520px' }">
+      <div v-if="cardLoading" class="loading-form">
+        <i class="pi pi-spin pi-spinner" style="font-size: 2rem; color: #7c3aed" />
+      </div>
+      <div v-else-if="cardRegistro" class="card-detalhe">
+        <div class="card-section-aluno">
+          <div class="card-nome">{{ cardRegistro.aluno_nome }}</div>
+          <div class="card-nascimento" v-if="cardRegistro.aluno_data_nascimento">
+            {{ formatarPeriodo(cardRegistro.aluno_data_nascimento) }} ({{ calcularIdade(cardRegistro.aluno_data_nascimento) }} anos)
+          </div>
+        </div>
+        <div class="card-campo"><span class="card-label">Turma</span><span class="card-valor">{{ cardRegistro.turma_nome }}</span></div>
+        <div class="card-campo"><span class="card-label">Período</span><span class="card-valor">{{ formatarPeriodo(cardRegistro.periodo) }}</span></div>
+        <div class="card-campo">
+          <span class="card-label">Competências BNCC</span>
+          <span class="card-valor">{{ cardRegistro.bncc_refs.join(', ') || '—' }}</span>
+        </div>
+        <div class="card-campo" v-if="cardRegistro.objetivos"><span class="card-label">Objetivos</span><span class="card-valor">{{ cardRegistro.objetivos }}</span></div>
+        <div class="card-campo" v-if="cardRegistro.atividades"><span class="card-label">Atividades</span><span class="card-valor">{{ cardRegistro.atividades }}</span></div>
+        <div class="card-campo" v-if="cardRegistro.mediacoes"><span class="card-label">Mediações</span><span class="card-valor">{{ cardRegistro.mediacoes }}</span></div>
+        <div class="card-campo" v-if="cardRegistro.ocorrencias"><span class="card-label">Ocorrências</span><span class="card-valor">{{ cardRegistro.ocorrencias }}</span></div>
+      </div>
+      <template #footer>
+        <Button label="Fechar" text @click="cardVisible = false" />
+        <Button label="Editar" icon="pi pi-pencil" @click="cardVisible = false; abrirDialogEditar(cardRegistro!.id)" />
+      </template>
+    </Dialog>
 
     <!-- Dialog Novo / Editar -->
     <Dialog
@@ -212,6 +243,9 @@ interface RegistroFull extends Registro {
   atividades: string
   mediacoes: string | null
   ocorrencias: string | null
+  aluno_nome?: string
+  aluno_data_nascimento?: string | null
+  turma_nome?: string
 }
 
 const toast   = useToast()
@@ -230,6 +264,33 @@ const dialogVisible = ref(false)
 const salvando      = ref(false)
 const editandoId    = ref<string | null>(null)
 const erroDialog    = ref('')
+const cardVisible   = ref(false)
+const cardLoading   = ref(false)
+const cardRegistro  = ref<RegistroFull | null>(null)
+
+async function abrirCard(registro: Registro) {
+  cardRegistro.value = null
+  cardVisible.value = true
+  cardLoading.value = true
+  try {
+    const { data } = await api.get<RegistroFull>(`/api/registros/${registro.id}`)
+    cardRegistro.value = data
+  } catch {
+    toast.add({ severity: 'error', summary: 'Erro ao carregar detalhes', life: 3000 })
+    cardVisible.value = false
+  } finally {
+    cardLoading.value = false
+  }
+}
+
+function calcularIdade(iso: string): number {
+  const nasc = new Date(iso)
+  const hoje = new Date()
+  let idade = hoje.getFullYear() - nasc.getFullYear()
+  const m = hoje.getMonth() - nasc.getMonth()
+  if (m < 0 || (m === 0 && hoje.getDate() < nasc.getDate())) idade--
+  return idade
+}
 
 const form = ref({
   periodo:    null as Date | null,
@@ -493,4 +554,13 @@ onMounted(async () => {
 }
 
 .mt-2 { margin-top: 0.5rem; }
+
+.card-detalhe { display: flex; flex-direction: column; gap: 0.875rem; padding: 0.25rem 0; }
+.card-section-aluno { padding-bottom: 0.5rem; border-bottom: 1px solid #e5e7eb; margin-bottom: 0.25rem; }
+.card-nome { font-size: 1.25rem; font-weight: 700; color: #111827; }
+.card-nascimento { font-size: 0.9rem; color: #6b7280; margin-top: 0.15rem; }
+.card-campo { display: flex; flex-direction: column; gap: 0.2rem; }
+.card-label { font-size: 0.75rem; font-weight: 600; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.05em; }
+.card-valor { font-size: 0.9375rem; color: #111827; white-space: pre-wrap; }
+:deep(.cursor-pointer-rows .p-datatable-tbody > tr) { cursor: pointer; }
 </style>
