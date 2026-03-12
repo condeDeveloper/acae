@@ -2,6 +2,47 @@ import type { FastifyInstance } from 'fastify'
 import { prisma } from '../../plugins/prisma.js'
 
 export default async function registrosRoutes(fastify: FastifyInstance) {
+  // GET /api/registros — lista todos os registros das turmas do professor
+  fastify.get(
+    '/api/registros',
+    { preHandler: [fastify.authenticate] },
+    async (request, reply) => {
+      const professor = request.professor
+      const query = request.query as { limit?: string }
+      const limit = Math.min(200, Math.max(1, parseInt(query.limit ?? '200')))
+
+      const registros = await prisma.registroAluno.findMany({
+        where: { turma: { professor_id: professor.id } },
+        orderBy: { periodo: 'desc' },
+        take: limit,
+        select: {
+          id: true,
+          periodo: true,
+          bncc_refs: true,
+          created_at: true,
+          updated_at: true,
+          aluno: { select: { id: true, nome: true } },
+          turma: { select: { id: true, nome: true } },
+        },
+      })
+
+      return reply.code(200).send({
+        data: registros.map((r) => ({
+          id: r.id,
+          periodo: r.periodo,
+          bncc_refs: r.bncc_refs,
+          created_at: r.created_at,
+          updated_at: r.updated_at,
+          aluno_id: r.aluno.id,
+          aluno_nome: r.aluno.nome,
+          turma_id: r.turma.id,
+          turma_nome: r.turma.nome,
+        })),
+        total: registros.length,
+      })
+    }
+  )
+
   // POST /api/alunos/:alunoId/registros
   fastify.post(
     '/api/alunos/:alunoId/registros',

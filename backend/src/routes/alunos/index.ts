@@ -8,14 +8,16 @@ export default async function alunosRoutes(fastify: FastifyInstance) {
     { preHandler: [fastify.authenticate] },
     async (request, reply) => {
       const professor = request.professor
+      const query = request.query as { turma_id?: string }
 
       const alunos = await prisma.aluno.findMany({
         where: {
           status: 'ativo',
           turma: { professor_id: professor.id },
+          ...(query.turma_id ? { turma_id: query.turma_id } : {}),
         },
         include: { turma: { select: { id: true, nome: true } } },
-        orderBy: { nome: 'asc' },
+        orderBy: [{ turma: { nome: 'asc' } }, { nome: 'asc' }],
       })
 
       return reply.code(200).send({
@@ -224,6 +226,39 @@ export default async function alunosRoutes(fastify: FastifyInstance) {
       })
 
       return reply.code(200).send({ message: 'Dados do aluno excluídos conforme solicitação LGPD' })
+    }
+  )
+
+  // GET /api/alunos/:alunoId/bncc-recentes — retorna BNCC refs mais usadas nos últimos registros
+  fastify.get(
+    '/api/alunos/:alunoId/bncc-recentes',
+    { preHandler: [fastify.authenticate] },
+    async (request, reply) => {
+      const professor = request.professor
+      const { alunoId } = request.params as { alunoId: string }
+
+      const aluno = await prisma.aluno.findFirst({
+        where: { id: alunoId, turma: { professor_id: professor.id }, status: { not: 'excluido' } },
+      })
+      if (!aluno) return reply.code(404).send({ error: 'Aluno não encontrado' })
+
+      const registros = await prisma.registroAluno.findMany({
+        where: { aluno_id: alunoId },
+        orderBy: { periodo: 'desc' },
+        take: 10,
+        select: { bncc_refs: true },
+      })
+
+      // Count frequency and return top refs
+      const freq = new Map<string, number>()
+      for (const r of registros) {
+        for (const ref of (r.bncc_refs as string[])) {
+          freq.set(ref, (freq.get(ref) ?? 0) + 1)
+        }
+      }
+      const sorted = [...freq.entries()].sort((a, b) => b[1] - a[1]).map(([ref]) => ref)
+
+      return reply.send({ bncc_refs: sorted })
     }
   )
 }

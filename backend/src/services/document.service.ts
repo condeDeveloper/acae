@@ -54,7 +54,7 @@ export async function gerarDocumento(params: GenerateParams) {
   let alunoNome = ''
   let pseudo = ''
 
-  if (tipo === 'portfolio_semanal' || tipo === 'relatorio_individual') {
+  if (tipo === 'portfolio_semanal' || tipo === 'portfolio_mensal' || tipo === 'relatorio_individual') {
     if (!params.aluno_id) throw Object.assign(new Error('aluno_id obrigatório'), { statusCode: 400 })
     if (!params.periodo_inicio || !params.periodo_fim) {
       throw Object.assign(new Error('periodo_inicio e periodo_fim obrigatórios'), { statusCode: 400 })
@@ -112,7 +112,7 @@ export async function gerarDocumento(params: GenerateParams) {
       bncc_refs: r.bncc_refs as string[],
     }))
 
-    if (tipo === 'portfolio_semanal') {
+    if (tipo === 'portfolio_semanal' || tipo === 'portfolio_mensal') {
       prompt = buildPromptPortfolio({
         pseudo,
         registros: registrosMapped,
@@ -227,7 +227,8 @@ export async function gerarDocumento(params: GenerateParams) {
       professor_id: professor.id,
       aluno_id: alunoId ?? null,
       turma_id: turmaId,
-      tipo: tipo as 'portfolio_semanal' | 'relatorio_individual' | 'atividade_adaptada' | 'resumo_pedagogico',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      tipo: tipo as any,
       status: 'rascunho',
       conteudo_gerado: conteudoGerado,
       bncc_refs: params.bncc_refs ?? [],

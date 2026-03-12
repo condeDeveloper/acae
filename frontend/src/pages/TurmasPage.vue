@@ -13,17 +13,19 @@
       :loading="loading"
       stripedRows
       responsiveLayout="scroll"
+      sortField="nome"
+      :sortOrder="1"
       emptyMessage="Nenhuma turma cadastrada. Clique em 'Nova Turma' para começar."
     >
-      <Column field="nome" header="Nome da Turma" />
-      <Column field="ano_letivo" header="Ano Letivo" style="width:110px" />
-      <Column field="turno" header="Turno" style="width:100px">
+      <Column field="nome" header="Nome da Turma" sortable />
+      <Column field="ano_letivo" header="Ano Letivo" sortable style="width:110px" />
+      <Column field="turno" header="Turno" sortable style="width:100px">
         <template #body="{ data }">
           <Tag :value="turnoLabel(data.turno)" :severity="turnoSeverity(data.turno)" />
         </template>
       </Column>
-      <Column field="escola" header="Escola" />
-      <Column field="total_alunos" header="Alunos" style="width:80px;text-align:center" />
+      <Column field="escola" header="Escola" sortable />
+      <Column field="total_alunos" header="Alunos" sortable style="width:80px;text-align:center" />
       <Column header="Ações" style="width:80px">
         <template #body="{ data }">
           <Button icon="pi pi-pencil" text rounded @click="abrirDialogEditar(data)" />

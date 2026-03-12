@@ -8,37 +8,50 @@
       <Button
         label="Novo Registro"
         icon="pi pi-plus"
-        :disabled="!aluno_id"
+        :disabled="modoFiltro === 'todos' || !aluno_id"
         @click="abrirDialogNovo"
       />
     </div>
 
-    <!-- Filtros -->
-    <div class="filtros">
-      <div class="field-inline">
-        <label>Turma</label>
-        <Select
-          v-model="turma_id"
-          :options="turmas"
-          optionLabel="nome"
-          optionValue="id"
-          placeholder="Selecione a turma"
-          style="min-width: 240px"
-        />
+    <!-- Filtro: Todos / Por Turma -->
+    <div class="filtro-bar">
+      <div class="modo-toggle">
+        <button
+          :class="['toggle-btn', modoFiltro === 'todos' ? 'toggle-btn--active' : '']"
+          @click="modoFiltro = 'todos'"
+        >Todos</button>
+        <button
+          :class="['toggle-btn', modoFiltro === 'turma' ? 'toggle-btn--active' : '']"
+          @click="modoFiltro = 'turma'"
+        >Por Turma</button>
       </div>
-      <div class="field-inline">
-        <label>Aluno</label>
-        <Select
-          v-model="aluno_id"
-          :options="alunos"
-          optionLabel="nome"
-          optionValue="id"
-          placeholder="Selecione o aluno"
-          :loading="loadingAlunos"
-          :disabled="!turma_id"
-          style="min-width: 240px"
-        />
-      </div>
+
+      <template v-if="modoFiltro === 'turma'">
+        <div class="field-inline">
+          <label>Turma</label>
+          <Select
+            v-model="turma_id"
+            :options="turmas"
+            optionLabel="nome"
+            optionValue="id"
+            placeholder="Selecione a turma"
+            style="min-width: 240px"
+          />
+        </div>
+        <div class="field-inline">
+          <label>Aluno</label>
+          <Select
+            v-model="aluno_id"
+            :options="alunos"
+            optionLabel="nome"
+            optionValue="id"
+            placeholder="Selecione o aluno"
+            :loading="loadingAlunos"
+            :disabled="!turma_id"
+            style="min-width: 240px"
+          />
+        </div>
+      </template>
     </div>
 
     <!-- Tabela -->
@@ -47,9 +60,13 @@
       :loading="loading"
       stripedRows
       responsiveLayout="scroll"
-      emptyMessage="Nenhum registro encontrado. Selecione um aluno e clique em 'Novo Registro'."
+      sortField="periodo"
+      :sortOrder="-1"
+      emptyMessage="Nenhum registro encontrado."
     >
-      <Column field="periodo" header="Período" style="width: 130px">
+      <Column v-if="modoFiltro === 'todos'" field="aluno_nome" header="Aluno" sortable style="min-width: 150px" />
+      <Column v-if="modoFiltro === 'todos'" field="turma_nome" header="Turma" sortable style="min-width: 150px" />
+      <Column field="periodo" header="Período" sortable style="width: 130px">
         <template #body="{ data }">
           {{ formatarPeriodo(data.periodo) }}
         </template>
@@ -59,7 +76,7 @@
           <span class="bncc-count">{{ data.bncc_refs.length }} competência{{ data.bncc_refs.length !== 1 ? 's' : '' }}</span>
         </template>
       </Column>
-      <Column field="created_at" header="Criado em" style="width: 150px">
+      <Column field="created_at" header="Criado em" sortable style="width: 150px">
         <template #body="{ data }">
           {{ formatarData(data.created_at) }}
         </template>
@@ -161,7 +178,6 @@
       </template>
     </Dialog>
 
-    <ConfirmDialog />
   </div>
 </template>
 
@@ -175,7 +191,6 @@ import Select from 'primevue/select'
 import DatePicker from 'primevue/datepicker'
 import Textarea from 'primevue/textarea'
 import Message from 'primevue/message'
-import ConfirmDialog from 'primevue/confirmdialog'
 import { useToast } from 'primevue/usetoast'
 import { useConfirm } from 'primevue/useconfirm'
 import BnccSelector from '@/components/BnccSelector.vue'
@@ -189,6 +204,8 @@ interface Registro {
   bncc_refs: string[]
   created_at: string
   updated_at: string
+  aluno_nome?: string
+  turma_nome?: string
 }
 interface RegistroFull extends Registro {
   objetivos: string
@@ -200,6 +217,7 @@ interface RegistroFull extends Registro {
 const toast   = useToast()
 const confirm = useConfirm()
 
+const modoFiltro    = ref<'todos' | 'turma'>('todos')
 const turmas        = ref<Turma[]>([])
 const alunos        = ref<Aluno[]>([])
 const registros     = ref<Registro[]>([])
@@ -252,6 +270,18 @@ async function carregarTurmas() {
   }
 }
 
+async function carregarTodos() {
+  loading.value = true
+  try {
+    const { data } = await api.get<{ data: Registro[] }>('/api/registros?limit=200')
+    registros.value = data.data
+  } catch {
+    toast.add({ severity: 'error', summary: 'Erro ao carregar registros', life: 3000 })
+  } finally {
+    loading.value = false
+  }
+}
+
 async function carregarAlunos(tid: string) {
   loadingAlunos.value = true
   try {
@@ -277,6 +307,16 @@ async function carregarRegistros(aid: string) {
     loading.value = false
   }
 }
+
+watch(modoFiltro, (novo) => {
+  registros.value = []
+  if (novo === 'todos') {
+    turma_id.value = null
+    aluno_id.value = null
+    alunos.value = []
+    carregarTodos()
+  }
+})
 
 watch(turma_id, (novoId) => {
   aluno_id.value = null
@@ -318,7 +358,8 @@ async function abrirDialogEditar(id: string) {
 }
 
 async function salvar() {
-  if (!formValido.value || !aluno_id.value) return
+  if (!formValido.value) return
+  if (!editandoId.value && !aluno_id.value) return
   salvando.value  = true
   erroDialog.value = ''
 
@@ -342,7 +383,8 @@ async function salvar() {
       toast.add({ severity: 'success', summary: 'Registro criado', life: 3000 })
     }
     dialogVisible.value = false
-    if (aluno_id.value) await carregarRegistros(aluno_id.value)
+    if (modoFiltro.value === 'todos') await carregarTodos()
+    else if (aluno_id.value) await carregarRegistros(aluno_id.value)
   } catch (err: unknown) {
     const e = err as { response?: { data?: { error?: string; message?: string } } }
     const msg = e?.response?.data?.message ?? e?.response?.data?.error ?? 'Erro ao salvar registro.'
@@ -374,7 +416,10 @@ async function excluir(id: string) {
   }
 }
 
-onMounted(carregarTurmas)
+onMounted(async () => {
+  await carregarTurmas()
+  await carregarTodos()
+})
 </script>
 
 <style scoped>
@@ -388,12 +433,33 @@ onMounted(carregarTurmas)
 .page-header h2 { margin: 0 0 0.25rem; font-size: 1.5rem; color: #7c3aed; }
 .page-header p  { margin: 0; color: #6b7280; }
 
-.filtros {
+.filtro-bar {
   display: flex;
-  gap: 1.5rem;
+  align-items: center;
+  gap: 0.75rem;
   margin-bottom: 1.25rem;
   flex-wrap: wrap;
-  align-items: flex-end;
+}
+.modo-toggle {
+  display: flex;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  overflow: hidden;
+}
+.toggle-btn {
+  padding: 0.375rem 0.875rem;
+  font-size: 0.875rem;
+  border: none;
+  background: #fff;
+  cursor: pointer;
+  color: #374151;
+  transition: background 0.15s, color 0.15s;
+}
+.toggle-btn:hover { background: #f3f4f6; }
+.toggle-btn--active {
+  background: #7c3aed;
+  color: #fff;
+  font-weight: 600;
 }
 .field-inline {
   display: flex;

@@ -37,7 +37,6 @@ const navItems = [
   { to: '/registros', label: 'Registros', icon: 'pi pi-book' },
   { to: '/documentos/gerar', label: 'Gerar Documento', icon: 'pi pi-file-edit' },
   { to: '/documentos', label: 'Documentos', icon: 'pi pi-file' },
-  { to: '/relatorio-individual', label: 'Relatório Individual', icon: 'pi pi-chart-bar' },
   { to: '/perfil', label: 'Perfil', icon: 'pi pi-cog' },
 ]
 </script>

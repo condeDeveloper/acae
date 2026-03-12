@@ -26,13 +26,29 @@ export default async function authRoutes(fastify: FastifyInstance) {
     const email = (payload.email as string | undefined) ?? ''
     const supabase_user_id = payload.sub
 
-    // Upsert: create if not exists, return existing if it does
-    const professor = await prisma.professor.upsert({
-      where: { supabase_user_id },
-      create: { supabase_user_id, nome, email, escola: body.escola ?? '' },
-      update: {},
-      select: { id: true, nome: true, email: true, papel: true, escola: true },
-    })
+    // Upsert by supabase_user_id. If email already exists with a different UID
+    // (e.g. seeded/migrated account), re-link by updating the supabase_user_id.
+    let professor
+    try {
+      professor = await prisma.professor.upsert({
+        where: { supabase_user_id },
+        create: { supabase_user_id, nome, email, escola: body.escola ?? '' },
+        update: {},
+        select: { id: true, nome: true, email: true, papel: true, escola: true },
+      })
+    } catch (e: unknown) {
+      // P2002 = unique constraint violation (email already taken by different UID)
+      const prismaErr = e as { code?: string }
+      if (prismaErr?.code === 'P2002' && email) {
+        professor = await prisma.professor.update({
+          where: { email },
+          data: { supabase_user_id },
+          select: { id: true, nome: true, email: true, papel: true, escola: true },
+        })
+      } else {
+        throw e
+      }
+    }
 
     return reply.code(201).send(professor)
   })

@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="page-container">
     <div class="page-header">
       <h2>Gerar Documento</h2>
@@ -31,17 +31,38 @@
               placeholder="Selecione o aluno"
               :loading="loadingAlunos"
               fluid
+              @change="onAlunoChange"
             />
           </div>
 
-          <div class="field" v-if="form.tipo !== 'resumo_pedagogico'">
-            <label>Período Início</label>
-            <DatePicker v-model="form.periodo_inicio" dateFormat="dd/mm/yy" fluid />
+          <div class="field" v-if="precisaDeDatas">
+            <label>
+              Período Início
+              <span class="label-badge">{{ labelDias(form.periodo_inicio) }}</span>
+            </label>
+            <DatePicker
+              v-model="form.periodo_inicio"
+              dateFormat="dd/mm/yy"
+              fluid
+              :maxDate="form.periodo_fim ?? hoje"
+              :minDate="minInicio"
+              @update:modelValue="onInicioChange"
+            />
           </div>
 
-          <div class="field" v-if="form.tipo !== 'resumo_pedagogico'">
-            <label>Período Fim</label>
-            <DatePicker v-model="form.periodo_fim" dateFormat="dd/mm/yy" fluid />
+          <div class="field" v-if="precisaDeDatas">
+            <label>
+              Período Fim
+              <span class="label-badge">{{ labelDias(form.periodo_fim) }}</span>
+            </label>
+            <DatePicker
+              v-model="form.periodo_fim"
+              dateFormat="dd/mm/yy"
+              fluid
+              :maxDate="hoje"
+              :minDate="form.periodo_inicio ?? undefined"
+              @update:modelValue="onFimChange"
+            />
           </div>
 
           <div class="field">
@@ -61,6 +82,11 @@
             @click="gerarDocumento"
             fluid
           />
+        </div>
+
+        <!-- Histórico de relatórios (apenas para relatorio_individual) -->
+        <div class="historico-section" v-if="form.tipo === 'relatorio_individual' && form.aluno_id">
+          <HistoricoRelatorios :aluno-id="form.aluno_id" />
         </div>
       </div>
 
@@ -96,7 +122,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import Dropdown from 'primevue/dropdown'
 import DatePicker from 'primevue/datepicker'
 import Button from 'primevue/button'
@@ -107,6 +133,7 @@ import { useToast } from 'primevue/usetoast'
 import BnccSelector from '@/components/BnccSelector.vue'
 import DocumentoRevisor from '@/components/DocumentoRevisor.vue'
 import BotaoExportar from '@/components/BotaoExportar.vue'
+import HistoricoRelatorios from '@/components/HistoricoRelatorios.vue'
 import api from '@/services/api'
 
 interface Aluno { id: string; nome: string; turma_id: string; turma_nome: string }
@@ -115,8 +142,12 @@ interface Rascunho { id: string; status: string; conteudo_gerado: string; conteu
 const confirm = useConfirm()
 const toast = useToast()
 
+const hoje = new Date()
+hoje.setHours(23, 59, 59, 999)
+
 const tiposDocumento = [
   { label: 'Portfólio Semanal', value: 'portfolio_semanal' },
+  { label: 'Portfólio Mensal', value: 'portfolio_mensal' },
   { label: 'Relatório Individual', value: 'relatorio_individual' },
   { label: 'Atividade Adaptada', value: 'atividade_adaptada' },
   { label: 'Resumo Pedagógico', value: 'resumo_pedagogico' },
@@ -136,7 +167,104 @@ const rascunho = ref<Rascunho | null>(null)
 const estaGerando = ref(false)
 const erroGeracao = ref('')
 
-const precisaDeDatas = computed(() => form.value.tipo !== 'resumo_pedagogico')
+const precisaDeDatas = computed(() => form.value.tipo !== 'resumo_pedagogico' && form.value.tipo !== 'atividade_adaptada')
+
+// Min inicio based on tipo and current fim
+const minInicio = computed(() => {
+  if (form.value.tipo === 'portfolio_semanal' && form.value.periodo_fim) {
+    const d = new Date(form.value.periodo_fim)
+    d.setDate(d.getDate() - 7)
+    return d
+  }
+  if (form.value.tipo === 'portfolio_mensal' && form.value.periodo_fim) {
+    const d = new Date(form.value.periodo_fim)
+    d.setMonth(d.getMonth() - 1)
+    return d
+  }
+  return undefined
+})
+
+function labelDias(date: Date | null): string {
+  if (!date) return ''
+  const agora = new Date()
+  agora.setHours(0, 0, 0, 0)
+  const d = new Date(date)
+  d.setHours(0, 0, 0, 0)
+  const diff = Math.round((agora.getTime() - d.getTime()) / 86400000)
+  if (diff === 0) return 'hoje'
+  if (diff === 1) return 'ontem'
+  if (diff > 0) return `${diff} dias atrás`
+  return ''
+}
+
+function setDatasAutomaticas(tipo: string) {
+  const fim = new Date()
+  fim.setHours(0, 0, 0, 0)
+  if (tipo === 'portfolio_semanal') {
+    const inicio = new Date(fim)
+    inicio.setDate(inicio.getDate() - 7)
+    form.value.periodo_fim = new Date(fim)
+    form.value.periodo_inicio = inicio
+  } else if (tipo === 'portfolio_mensal') {
+    const inicio = new Date(fim)
+    inicio.setMonth(inicio.getMonth() - 1)
+    form.value.periodo_fim = new Date(fim)
+    form.value.periodo_inicio = inicio
+  } else if (tipo === 'relatorio_individual') {
+    // Keep as is — user sets manually
+  } else {
+    form.value.periodo_inicio = null
+    form.value.periodo_fim = null
+  }
+}
+
+// Clamp period_inicio when period_fim changes (enforce max range)
+function onFimChange(val: Date | null) {
+  if (!val) return
+  if (form.value.tipo === 'portfolio_semanal' && form.value.periodo_inicio) {
+    const minI = new Date(val)
+    minI.setDate(minI.getDate() - 7)
+    if (form.value.periodo_inicio < minI) form.value.periodo_inicio = minI
+  }
+  if (form.value.tipo === 'portfolio_mensal' && form.value.periodo_inicio) {
+    const minI = new Date(val)
+    minI.setMonth(minI.getMonth() - 1)
+    if (form.value.periodo_inicio < minI) form.value.periodo_inicio = minI
+  }
+}
+
+// Clamp period_fim when period_inicio changes (enforce max range)
+function onInicioChange(val: Date | null) {
+  if (!val) return
+  if (form.value.tipo === 'portfolio_semanal' && form.value.periodo_fim) {
+    const maxF = new Date(val)
+    maxF.setDate(maxF.getDate() + 7)
+    if (form.value.periodo_fim > maxF) form.value.periodo_fim = maxF
+  }
+  if (form.value.tipo === 'portfolio_mensal' && form.value.periodo_fim) {
+    const maxF = new Date(val)
+    maxF.setMonth(maxF.getMonth() + 1)
+    if (form.value.periodo_fim > maxF) form.value.periodo_fim = maxF
+  }
+}
+
+watch(() => form.value.tipo, (novoTipo) => {
+  rascunho.value = null
+  erroGeracao.value = ''
+  setDatasAutomaticas(novoTipo)
+}, { immediate: true })
+
+async function onAlunoChange() {
+  if (!form.value.aluno_id) return
+  try {
+    const { data } = await api.get<{ bncc_refs: string[] }>(`/api/alunos/${form.value.aluno_id}/bncc-recentes`)
+    if (data.bncc_refs?.length) {
+      form.value.bncc_refs = data.bncc_refs
+    }
+  } catch {
+    /* non-critical */
+  }
+}
 
 const formularioValido = computed(() => {
   if (!form.value.tipo || !form.value.aluno_id || form.value.bncc_refs.length === 0) return false
@@ -189,7 +317,7 @@ async function autoSalvar(texto: string) {
   try {
     await api.patch(`/api/documents/rascunhos/${rascunho.value.id}`, { conteudo_editado: texto })
   } catch {
-    /* handled silently — DocumentoRevisor shows error state */
+    /* handled silently */
   }
 }
 
@@ -240,7 +368,22 @@ async function finalizar() {
   gap: 0.375rem;
   margin-bottom: 1rem;
 }
-.field label { font-size: 0.875rem; font-weight: 500; color: #374151; }
+.field label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.label-badge {
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: #7c3aed;
+  background: #ede9fe;
+  padding: 0.1rem 0.4rem;
+  border-radius: 999px;
+}
 .rascunho-header {
   display: flex;
   align-items: center;
@@ -254,6 +397,7 @@ async function finalizar() {
   margin-top: 1rem;
   flex-wrap: wrap;
 }
+.historico-section { margin-top: 1.25rem; }
 .sticky { position: sticky; }
 .top-4 { top: 1rem; }
 .grid { display: flex; flex-wrap: wrap; gap: 1.5rem; }

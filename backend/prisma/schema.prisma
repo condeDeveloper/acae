@@ -41,6 +41,7 @@ enum StatusAluno {
 
 enum TipoDocumento {
   portfolio_semanal
+  portfolio_mensal
   relatorio_individual
   atividade_adaptada
   resumo_pedagogico

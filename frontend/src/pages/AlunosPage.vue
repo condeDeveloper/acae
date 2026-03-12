@@ -5,29 +5,44 @@
         <h2>Alunos</h2>
         <p>Gerencie os alunos das suas turmas</p>
       </div>
-      <Button label="Novo Aluno" icon="pi pi-plus" @click="abrirDialogNovo" :disabled="!turmaSelecionada" />
+      <Button label="Novo Aluno" icon="pi pi-plus" @click="abrirDialogNovo" :disabled="modoFiltro === 'turma' && !turmaSelecionada" />
     </div>
 
-    <div class="filtro-turma">
-      <label>Turma</label>
+    <!-- Filtro: Todos / Por Turma -->
+    <div class="filtro-bar">
+      <div class="modo-toggle">
+        <button
+          :class="['toggle-btn', modoFiltro === 'todos' ? 'toggle-btn--active' : '']"
+          @click="modoFiltro = 'todos'"
+        >Todos</button>
+        <button
+          :class="['toggle-btn', modoFiltro === 'turma' ? 'toggle-btn--active' : '']"
+          @click="modoFiltro = 'turma'"
+        >Por Turma</button>
+      </div>
+
       <Select
+        v-if="modoFiltro === 'turma'"
         v-model="turmaSelecionada"
         :options="turmas"
         optionLabel="nome"
         optionValue="id"
         placeholder="Selecione uma turma"
-        style="min-width: 280px"
+        style="min-width: 260px"
       />
     </div>
 
     <DataTable
-      :value="alunos"
+      :value="alunosFiltrados"
       :loading="loading"
       stripedRows
       responsiveLayout="scroll"
-      emptyMessage="Nenhum aluno encontrado nesta turma."
+      emptyMessage="Nenhum aluno encontrado."
+      sortField="turma_nome"
+      :sortOrder="1"
     >
-      <Column field="nome" header="Nome" />
+      <Column field="nome" header="Nome" sortable />
+      <Column field="turma_nome" header="Turma" sortable style="width:170px" />
       <Column field="data_nascimento" header="Nascimento" style="width:130px">
         <template #body="{ data }">
           {{ data.data_nascimento ? formatarData(data.data_nascimento) : '—' }}
@@ -97,8 +112,6 @@
       </template>
     </Dialog>
 
-    <!-- Confirmação de exclusão -->
-    <ConfirmDialog />
   </div>
 </template>
 
@@ -112,7 +125,6 @@ import InputText from 'primevue/inputtext'
 import Select from 'primevue/select'
 import DatePicker from 'primevue/datepicker'
 import Textarea from 'primevue/textarea'
-import ConfirmDialog from 'primevue/confirmdialog'
 import { useToast } from 'primevue/usetoast'
 import { useConfirm } from 'primevue/useconfirm'
 import api from '@/services/api'
@@ -124,6 +136,7 @@ interface Aluno {
   data_nascimento: string | null
   necessidades_educacionais: string | null
   turma_id: string
+  turma_nome: string
 }
 
 const toast = useToast()
@@ -132,6 +145,7 @@ const confirm = useConfirm()
 const turmas = ref<Turma[]>([])
 const alunos = ref<Aluno[]>([])
 const loading = ref(false)
+const modoFiltro = ref<'todos' | 'turma'>('todos')
 const turmaSelecionada = ref<string | null>(null)
 const dialogVisible = ref(false)
 const salvando = ref(false)
@@ -146,6 +160,13 @@ const form = ref<{
 
 const formValido = computed(() => form.value.nome.trim().length > 0 && form.value.turma_id !== '')
 
+const alunosFiltrados = computed(() => {
+  if (modoFiltro.value === 'turma' && turmaSelecionada.value) {
+    return alunos.value.filter(a => a.turma_id === turmaSelecionada.value)
+  }
+  return alunos.value
+})
+
 function formatarData(iso: string) {
   const [y, m, d] = iso.split('T')[0].split('-')
   return `${d}/${m}/${y}`
@@ -154,31 +175,27 @@ function formatarData(iso: string) {
 async function carregarTurmas() {
   const { data } = await api.get<{ data: Turma[] }>('/api/turmas')
   turmas.value = data.data
-  if (turmas.value.length > 0 && !turmaSelecionada.value) {
-    turmaSelecionada.value = turmas.value[0].id
-  }
 }
 
 async function carregarAlunos() {
-  if (!turmaSelecionada.value) return
   loading.value = true
   try {
-    const { data } = await api.get<{ data: Aluno[] }>(`/api/turmas/${turmaSelecionada.value}/alunos`)
+    const { data } = await api.get<{ data: Aluno[] }>('/api/alunos')
     alunos.value = data.data
   } finally {
     loading.value = false
   }
 }
 
-watch(turmaSelecionada, () => {
-  carregarAlunos()
+watch(modoFiltro, (novo) => {
+  if (novo === 'todos') turmaSelecionada.value = null
 })
 
 function abrirDialogNovo() {
   editando.value = null
   form.value = {
     nome: '',
-    turma_id: turmaSelecionada.value ?? '',
+    turma_id: turmaSelecionada.value ?? (turmas.value[0]?.id ?? ''),
     data_nascimento: null,
     necessidades_educacionais: '',
   }
@@ -237,9 +254,6 @@ async function salvar() {
       toast.add({ severity: 'success', summary: 'Aluno adicionado', life: 3000 })
     }
     dialogVisible.value = false
-    if (form.value.turma_id !== turmaSelecionada.value) {
-      turmaSelecionada.value = form.value.turma_id
-    }
     await carregarAlunos()
   } catch {
     toast.add({ severity: 'error', summary: 'Erro ao salvar aluno', life: 3000 })
@@ -248,7 +262,9 @@ async function salvar() {
   }
 }
 
-onMounted(carregarTurmas)
+onMounted(async () => {
+  await Promise.all([carregarTurmas(), carregarAlunos()])
+})
 </script>
 
 <style scoped>
@@ -261,15 +277,38 @@ onMounted(carregarTurmas)
 }
 .page-header h2 { margin: 0 0 0.25rem; font-size: 1.5rem; color: #7c3aed; }
 .page-header p { margin: 0; color: #6b7280; font-size: 0.875rem; }
-.filtro-turma {
+.filtro-bar {
   display: flex;
   align-items: center;
   gap: 0.75rem;
   margin-bottom: 1.25rem;
+  flex-wrap: wrap;
 }
-.filtro-turma label { font-size: 0.875rem; font-weight: 500; color: #374151; }
+.modo-toggle {
+  display: flex;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  overflow: hidden;
+}
+.toggle-btn {
+  padding: 0.375rem 0.875rem;
+  font-size: 0.875rem;
+  border: none;
+  background: #fff;
+  cursor: pointer;
+  color: #374151;
+  transition: background 0.15s, color 0.15s;
+}
+.toggle-btn:hover { background: #f3f4f6; }
+.toggle-btn--active {
+  background: #7c3aed;
+  color: #fff;
+  font-weight: 600;
+}
 .dialog-form { display: flex; flex-direction: column; gap: 1rem; padding: 0.5rem 0; }
 .field { display: flex; flex-direction: column; gap: 0.375rem; }
 .field label { font-size: 0.875rem; font-weight: 500; color: #374151; }
 </style>
+
+
 
