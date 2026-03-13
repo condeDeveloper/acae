@@ -537,7 +537,7 @@ async function main() {
 
   let inseridas = 0
   let ignoradas = 0
-  let teste = 0;
+  let teste = 1;
 
   for (const atividade of atividades) {
     const existente = await prisma.atividadeBNCC.findFirst({
