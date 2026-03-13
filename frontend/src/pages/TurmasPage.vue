@@ -1,13 +1,9 @@
 <template>
-  <div class="page-container">
-    <div class="page-header">
-      <div>
-        <h2>Turmas</h2>
-        <p>Gerencie suas turmas do ano letivo</p>
-      </div>
-      <Button label="Nova Turma" icon="pi pi-plus" @click="abrirDialogNova" />
-    </div>
+  <Teleport to="#page-action-portal" defer>
+    <Button label="Nova Turma" icon="pi pi-plus" @click="abrirDialogNova" />
+  </Teleport>
 
+  <div class="page-container">
     <DataTable
       :value="turmas"
       :loading="loading"
@@ -23,15 +19,15 @@
       @row-click="abrirCard($event.data)"
     >
       <Column field="nome" header="Nome da Turma" sortable />
-      <Column field="ano_letivo" header="Ano Letivo" sortable style="width:110px" />
-      <Column field="turno" header="Turno" sortable style="width:100px">
+      <Column field="ano_letivo" header="Ano Letivo" sortable />
+      <Column field="turno" header="Turno" sortable>
         <template #body="{ data }">
           <Tag :value="turnoLabel(data.turno)" :severity="turnoSeverity(data.turno)" />
         </template>
       </Column>
       <Column field="escola" header="Escola" sortable />
-      <Column field="total_alunos" header="Alunos" sortable style="width:80px;text-align:center" />
-      <Column header="Ações" style="width:80px">
+      <Column field="total_alunos" header="Alunos" sortable style="width:90px;text-align:center" />
+      <Column header="Ações" style="width:90px">
         <template #body="{ data }">
           <Button icon="pi pi-pencil" text rounded @click.stop="abrirDialogEditar(data)" />
         </template>
@@ -113,6 +109,7 @@ import Tag from 'primevue/tag'
 import { useToast } from 'primevue/usetoast'
 import { useAuthStore } from '@/stores/auth'
 import api from '@/services/api'
+import { usePageLayout } from '@/composables/usePageLayout'
 
 interface Turma {
   id: string
@@ -126,6 +123,8 @@ interface Turma {
 
 const toast = useToast()
 const authStore = useAuthStore()
+
+usePageLayout({ title: 'Turmas', subtitle: 'Gerencie suas turmas do ano letivo' })
 
 const turmas = ref<Turma[]>([])
 const loading = ref(false)
@@ -228,7 +227,7 @@ onMounted(carregar)
   align-items: flex-start;
   margin-bottom: 1.5rem;
 }
-.page-header h2 { margin: 0 0 0.25rem; font-size: 1.5rem; color: var(--acae-primary); }
+.page-header h2 { margin: 0 0 0.25rem; font-size: 1.75rem; font-weight: 900; font-family: 'Nunito', sans-serif; color: var(--text-1); }
 .page-header p { margin: 0; color: var(--text-2); font-size: 0.875rem; }
 .dialog-form { display: flex; flex-direction: column; gap: 1rem; padding: 0.5rem 0; }
 .field { display: flex; flex-direction: column; gap: 0.375rem; }

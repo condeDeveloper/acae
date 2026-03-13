@@ -1,17 +1,9 @@
 <template>
-  <div class="page-container">
-    <div class="page-header">
-      <div>
-        <h2>Registros Pedagógicos</h2>
-        <p>Registre as atividades semanais dos alunos para gerar documentos e relatórios</p>
-      </div>
-      <Button
-        label="Novo Registro"
-        icon="pi pi-plus"
-        @click="abrirDialogNovo"
-      />
-    </div>
+  <Teleport to="#page-action-portal" defer>
+    <Button label="Novo Registro" icon="pi pi-plus" @click="abrirDialogNovo" />
+  </Teleport>
 
+  <div class="page-container">
     <!-- Filtro: Todos / Por Turma -->
     <div class="filtro-bar">
       <div class="modo-switch" @click="toggleModo">
@@ -65,24 +57,29 @@
       class="cursor-pointer-rows"
       @row-click="abrirCard($event.data)"
     >
-      <Column v-if="modoFiltro === 'todos'" field="aluno_nome" header="Aluno" sortable style="min-width: 150px" />
-      <Column v-if="modoFiltro === 'todos'" field="turma_nome" header="Turma" sortable style="min-width: 150px" />
-      <Column field="periodo" header="Período" sortable style="width: 130px">
+      <Column v-if="modoFiltro === 'todos'" header="" style="width:52px;padding:0.3rem">
+        <template #body="{ index }">
+          <img :src="getKidImage(index)" class="reg-avatar" alt="avatar" />
+        </template>
+      </Column>
+      <Column v-if="modoFiltro === 'todos'" field="aluno_nome" header="Aluno" sortable />
+      <Column v-if="modoFiltro === 'todos'" field="turma_nome" header="Turma" sortable />
+      <Column field="periodo" header="Período" sortable>
         <template #body="{ data }">
           {{ formatarPeriodo(data.periodo) }}
         </template>
       </Column>
-      <Column header="Competências BNCC" style="width: 180px">
+      <Column header="Competências BNCC">
         <template #body="{ data }">
           <span class="bncc-count">{{ data.bncc_refs.length }} competência{{ data.bncc_refs.length !== 1 ? 's' : '' }}</span>
         </template>
       </Column>
-      <Column field="created_at" header="Criado em" sortable style="width: 150px">
+      <Column field="created_at" header="Criado em" sortable>
         <template #body="{ data }">
           {{ formatarData(data.created_at) }}
         </template>
       </Column>
-      <Column header="Ações" style="width: 100px">
+      <Column header="Ações" style="width:90px">
         <template #body="{ data }">
           <Button icon="pi pi-pencil" text rounded @click.stop="abrirDialogEditar(data.id)" />
           <Button icon="pi pi-trash" text rounded severity="danger" @click.stop="confirmarExcluir(data)" />
@@ -93,7 +90,7 @@
     <!-- Card Registro -->
     <Dialog v-model:visible="cardVisible" header="Detalhes do Registro" modal :style="{ width: '520px' }">
       <div v-if="cardLoading" class="loading-form">
-        <i class="pi pi-spin pi-spinner" style="font-size: 2rem; color: #7c3aed" />
+        <i class="pi pi-spin pi-spinner" style="font-size: 2rem; color: var(--acae-primary)" />
       </div>
       <div v-else-if="cardRegistro" class="card-detalhe">
         <div class="card-section-aluno">
@@ -218,7 +215,7 @@
       </div>
 
       <div v-else class="loading-form">
-        <i class="pi pi-spin pi-spinner" style="font-size: 2rem; color: #7c3aed" />
+        <i class="pi pi-spin pi-spinner" style="font-size: 2rem; color: var(--acae-primary)" />
         <p>Carregando registro...</p>
       </div>
 
@@ -251,6 +248,7 @@ import { useToast } from 'primevue/usetoast'
 import { useConfirm } from 'primevue/useconfirm'
 import BnccSelector from '@/components/BnccSelector.vue'
 import api from '@/services/api'
+import { usePageLayout } from '@/composables/usePageLayout'
 
 interface Turma { id: string; nome: string }
 interface Aluno  { id: string; nome: string }
@@ -271,6 +269,16 @@ interface RegistroFull extends Registro {
   aluno_nome?: string
   aluno_data_nascimento?: string | null
   turma_nome?: string
+}
+
+usePageLayout({ title: 'Registros Pedagógicos', subtitle: 'Registre as atividades semanais dos alunos' })
+
+// ── Kid avatars ──
+const kidModules = import.meta.glob('@/assets/drawings/kid*.png', { eager: true })
+const kidImages: string[] = Object.values(kidModules).map((m: any) => m.default)
+function getKidImage(index: number) {
+  if (kidImages.length === 0) return ''
+  return kidImages[Math.abs(index) % kidImages.length]
 }
 
 const toast   = useToast()
@@ -548,7 +556,7 @@ onMounted(async () => {
   align-items: flex-start;
   margin-bottom: 1.5rem;
 }
-.page-header h2 { margin: 0 0 0.25rem; font-size: 1.5rem; color: var(--acae-primary); }
+.page-header h2 { margin: 0 0 0.25rem; font-size: 1.75rem; font-weight: 900; font-family: 'Nunito', sans-serif; color: var(--text-1); }
 .page-header p  { margin: 0; color: var(--text-2); }
 
 .filtro-bar {
@@ -596,6 +604,13 @@ onMounted(async () => {
 .field label { font-size: 0.875rem; font-weight: 500; color: var(--text-2); }
 .char-count  { font-size: 0.75rem; color: var(--text-3); align-self: flex-end; }
 .bncc-count  { font-size: 0.8125rem; color: var(--text-2); }
+.reg-avatar {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--acae-primary);
+  display: block;
+}
 
 .loading-form {
   display: flex;

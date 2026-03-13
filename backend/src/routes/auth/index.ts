@@ -56,13 +56,13 @@ export default async function authRoutes(fastify: FastifyInstance) {
   /**
    * GET /api/auth/me
    * Returns the authenticated professor's profile.
-   * Rate limited to 5 requests / 15 min.
+   * Rate limited to 60 requests / 15 min (allows multiple tabs and page refreshes).
    */
   fastify.get(
     '/api/auth/me',
     {
       config: {
-        rateLimit: { max: 5, timeWindow: '15 minutes' },
+        rateLimit: { max: 60, timeWindow: '15 minutes' },
       },
     },
     async (request) => {

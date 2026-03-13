@@ -13,7 +13,9 @@
 }
 .forbidden h1 {
   font-size: 4rem;
-  color: #7c3aed;
+  color: var(--acae-primary, #FFCC02);
   margin: 0;
+  font-family: 'Nunito', sans-serif;
+  font-weight: 900;
 }
 </style>

@@ -20,7 +20,7 @@ app.use(PrimeVue, {
   theme: {
     preset: AcaePreset,
     options: {
-      darkModeSelector: 'html',
+      darkModeSelector: '.dark-mode',
     },
   },
 })

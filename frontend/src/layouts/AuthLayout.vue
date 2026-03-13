@@ -22,10 +22,10 @@
   width: 100%;
   max-width: 420px;
   background: var(--bg-surface);
-  border: 1px solid var(--border);
-  border-radius: 14px;
+  border: 2px solid var(--border);
+  border-radius: 24px;
   padding: 2rem;
-  box-shadow: 0 8px 48px rgba(0,0,0,0.5), 0 0 0 1px rgba(139,92,246,0.08);
+  box-shadow: 0 8px 40px rgba(0,0,0,0.10);
 }
 .auth-header {
   text-align: center;
@@ -33,13 +33,17 @@
 }
 .auth-title {
   margin: 0;
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--acae-primary);
+  font-size: 1.75rem;
+  font-weight: 900;
+  color: var(--text-1);
+  font-family: 'Nunito', sans-serif;
 }
 .auth-subtitle {
   margin: 0.25rem 0 0;
-  color: var(--text-3);
-  font-size: 0.875rem;
+  color: var(--text-2);
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
 }
 </style>

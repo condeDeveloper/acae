@@ -1,33 +1,44 @@
 :root {
-  /* === Brand === */
-  --acae-primary:       #8b5cf6;
-  --acae-primary-dim:   rgba(139, 92, 246, 0.12);
-  --acae-primary-glow:  rgba(139, 92, 246, 0.35);
+  /* === Brand — Autism Colors === */
+  --acae-primary:       #FFCC02;          /* amarelo — destaque principal */
+  --acae-primary-dim:   rgba(255, 204, 2, 0.18);
+  --acae-primary-glow:  rgba(255, 204, 2, 0.45);
+  --acae-primary-text:  #856900;          /* texto sobre fundo amarelo */
 
-  /* === Backgrounds === */
-  --bg-base:     #080c14;
-  --bg-surface:  #0d1321;
-  --bg-card:     #111827;
-  --bg-overlay:  #1a2236;
-  --bg-hover:    rgba(255, 255, 255, 0.04);
-  --bg-active:   rgba(139, 92, 246, 0.12);
+  --acae-blue:          #4A90E2;
+  --acae-blue-dim:      rgba(74, 144, 226, 0.14);
+  --acae-blue-glow:     rgba(74, 144, 226, 0.40);
+
+  --acae-red:           #F25C5C;
+  --acae-red-dim:       rgba(242, 92, 92, 0.14);
+
+  --acae-green:         #3DC98A;
+  --acae-green-dim:     rgba(61, 201, 138, 0.14);
+
+  /* === Backgrounds (light) === */
+  --bg-base:     #F0F4F8;
+  --bg-surface:  #FFFFFF;
+  --bg-card:     #FFFFFF;
+  --bg-overlay:  #E8EDF4;
+  --bg-hover:    rgba(255, 204, 2, 0.07);
+  --bg-active:   rgba(255, 204, 2, 0.15);
 
   /* === Borders === */
-  --border:       rgba(255, 255, 255, 0.07);
-  --border-hover: rgba(255, 255, 255, 0.14);
+  --border:       rgba(0, 0, 0, 0.08);
+  --border-hover: rgba(0, 0, 0, 0.16);
 
   /* === Text === */
-  --text-1: #f1f5f9;
-  --text-2: #94a3b8;
-  --text-3: #475569;
+  --text-1: #1C2B3A;
+  --text-2: #5A6A7E;
+  --text-3: #9BA8B7;
 
   /* === Status === */
-  --color-success: #10b981;
-  --color-warn:    #f59e0b;
-  --color-error:   #ef4444;
+  --color-success: #3DC98A;
+  --color-warn:    #FFCC02;
+  --color-error:   #F25C5C;
 
   /* === Legacy (compat) === */
-  --acae-yellow:       #D97706;
-  --acae-yellow-light: rgba(217, 119, 6, 0.15);
-  --acae-yellow-text:  #fbbf24;
+  --acae-yellow:       #FFCC02;
+  --acae-yellow-light: rgba(255, 204, 2, 0.15);
+  --acae-yellow-text:  #856900;
 }

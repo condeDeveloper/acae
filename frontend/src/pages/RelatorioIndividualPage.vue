@@ -1,10 +1,5 @@
 <template>
   <div class="page-container">
-    <div class="page-header">
-      <h2>Relatório Individual</h2>
-      <p>Gere e gerencie relatórios individuais dos alunos</p>
-    </div>
-
     <div class="grid">
       <!-- Formulário -->
       <div class="col-12 lg:col-5">
@@ -104,12 +99,14 @@ import BotaoExportar from '@/components/BotaoExportar.vue'
 import HistoricoRelatorios from '@/components/HistoricoRelatorios.vue'
 import { useRelatorioStore } from '@/stores/relatorio.store'
 import api from '@/services/api'
+import { usePageLayout } from '@/composables/usePageLayout'
 
 interface Aluno { id: string; nome: string; turma_id: string; turma_nome: string }
 
 const confirm = useConfirm()
 const toast = useToast()
 const store = useRelatorioStore()
+usePageLayout({ title: 'Relatório Individual', subtitle: 'Gere e gerencie relatórios individuais dos alunos' })
 
 const alunos = ref<Aluno[]>([])
 const loadingAlunos = ref(false)
@@ -165,7 +162,7 @@ async function finalizar() {
 <style scoped>
 .page-container { padding: 1rem; }
 .page-header { margin-bottom: 1.5rem; }
-.page-header h2 { margin: 0 0 0.25rem; font-size: 1.5rem; color: #7c3aed; }
+.page-header h2 { margin: 0 0 0.25rem; font-size: 1.75rem; font-weight: 900; font-family: 'Nunito', sans-serif; color: var(--text-1); }
 .page-header p { margin: 0; color: #6b7280; }
 .form-card, .rascunho-card {
   background: #fff;

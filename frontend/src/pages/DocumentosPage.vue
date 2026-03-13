@@ -1,14 +1,9 @@
 <template>
   <div class="page-container">
-    <div class="page-header">
-      <h2>Documentos</h2>
-      <p>Histórico de documentos gerados — clique para baixar</p>
-    </div>
-
     <DataTable
       :value="documentos"
       :loading="loading"
-      paginator
+      :paginator="documentos.length > 20"
       :rows="20"
       :rowsPerPageOptions="[10, 20, 50]"
       sortField="finalizado_em"
@@ -17,17 +12,17 @@
       class="cursor-pointer-rows"
       @row-click="abrirDownload($event.data)"
     >
-      <Column field="aluno_nome" header="Aluno" sortable />
-      <Column field="tipo" header="Tipo" sortable>
+      <Column field="aluno_nome" header="Aluno" sortable style="width:25%" />
+      <Column field="tipo" header="Tipo" sortable style="width:30%">
         <template #body="{ data }">{{ tipoLabel(data.tipo) }}</template>
       </Column>
-      <Column field="periodo" header="Período" sortable />
-      <Column field="finalizado_em" header="Data" sortable>
+      <Column field="periodo" header="Período" sortable style="width:25%" />
+      <Column field="finalizado_em" header="Data" sortable style="width:12%">
         <template #body="{ data }">
           {{ data.finalizado_em ? new Date(data.finalizado_em).toLocaleDateString('pt-BR') : '—' }}
         </template>
       </Column>
-      <Column header="Download" style="width: 90px; text-align: center">
+      <Column header="Download" style="width:8%; text-align: center">
         <template #body="{ data }">
           <Button icon="pi pi-download" text rounded @click.stop="abrirFormato(data)" />
         </template>
@@ -65,6 +60,7 @@ import Button from 'primevue/button'
 import Dialog from 'primevue/dialog'
 import BotaoExportar from '@/components/BotaoExportar.vue'
 import api from '@/services/api'
+import { usePageLayout } from '@/composables/usePageLayout'
 
 interface Documento {
   id: string
@@ -78,6 +74,7 @@ interface Documento {
 }
 
 const documentos = ref<Documento[]>([])
+usePageLayout({ title: 'Histórico de Documentos', subtitle: 'Clique em um documento para baixar' })
 const loading = ref(false)
 const downloadVisible = ref(false)
 const selecionado = ref<Documento | null>(null)
@@ -121,7 +118,7 @@ onMounted(async () => {
 <style scoped>
 .page-container { padding: 1rem; }
 .page-header { margin-bottom: 1.5rem; }
-.page-header h2 { margin: 0 0 0.25rem; font-size: 1.5rem; color: var(--acae-primary); }
+.page-header h2 { margin: 0 0 0.25rem; font-size: 1.75rem; font-weight: 900; font-family: 'Nunito', sans-serif; color: var(--text-1); }
 .page-header p { margin: 0; color: var(--text-2); }
 .doc-info { display: flex; flex-direction: column; gap: 0.875rem; padding: 0.25rem 0; }
 .doc-campo { display: flex; flex-direction: column; gap: 0.2rem; }

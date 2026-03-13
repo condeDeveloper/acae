@@ -1,13 +1,9 @@
 <template>
-  <div class="page-container">
-    <div class="page-header">
-      <div>
-        <h2>Alunos</h2>
-        <p>Gerencie os alunos das suas turmas</p>
-      </div>
-      <Button label="Novo Aluno" icon="pi pi-plus" @click="abrirDialogNovo" />
-    </div>
+  <Teleport to="#page-action-portal" defer>
+    <Button label="Novo Aluno" icon="pi pi-plus" @click="abrirDialogNovo" />
+  </Teleport>
 
+  <div class="page-container">
     <!-- Filtro: Todos / Por Turma -->
     <div class="filtro-bar">
       <div class="modo-switch" @click="toggleModo">
@@ -47,9 +43,14 @@
       class="cursor-pointer-rows"
       @row-click="abrirCard($event.data)"
     >
+      <Column header="" style="width:60px">
+        <template #body="{ index }">
+          <img :src="getKidImage(index)" class="aluno-avatar" alt="avatar" />
+        </template>
+      </Column>
       <Column field="nome" header="Nome" sortable />
-      <Column field="turma_nome" header="Turma" sortable style="width:170px" />
-      <Column field="data_nascimento" header="Nascimento" style="width:130px">
+      <Column field="turma_nome" header="Turma" sortable />
+      <Column field="data_nascimento" header="Nascimento">
         <template #body="{ data }">
           {{ data.data_nascimento ? formatarData(data.data_nascimento) : '—' }}
         </template>
@@ -59,7 +60,7 @@
           {{ data.necessidades_educacionais || '—' }}
         </template>
       </Column>
-      <Column header="Ações" style="width:100px">
+      <Column header="Ações" style="width:90px">
         <template #body="{ data }">
           <Button icon="pi pi-pencil" text rounded @click.stop="abrirDialogEditar(data)" />
           <Button icon="pi pi-trash" text rounded severity="danger" @click.stop="confirmarExcluir(data)" />
@@ -70,6 +71,9 @@
     <!-- Card Aluno -->
     <Dialog v-model:visible="cardVisible" header="Detalhes do Aluno" modal :style="{ width: '420px' }">
       <div v-if="cardAluno" class="card-detalhe">
+        <div class="card-avatar-wrap">
+          <img :src="getKidImage(alunos.findIndex(a => a.id === cardAluno!.id))" class="card-avatar-img" alt="avatar" />
+        </div>
         <div class="card-nome">{{ cardAluno.nome }}</div>
         <div class="card-campo"><span class="card-label">Turma</span><span class="card-valor">{{ cardAluno.turma_nome }}</span></div>
         <div class="card-campo">
@@ -156,6 +160,18 @@ import Textarea from 'primevue/textarea'
 import { useToast } from 'primevue/usetoast'
 import { useConfirm } from 'primevue/useconfirm'
 import api from '@/services/api'
+import { usePageLayout } from '@/composables/usePageLayout'
+
+// ── Kid avatars (drawings) ──────────────────────────────────────────────────
+usePageLayout({ title: 'Alunos', subtitle: 'Gerencie os alunos das suas turmas' })
+const kidModules = import.meta.glob('@/assets/drawings/kid*.png', { eager: true })
+const kidImages: string[] = Object.values(kidModules).map((m: any) => m.default)
+
+function getKidImage(index: number): string {
+  if (kidImages.length === 0) return ''
+  return kidImages[Math.abs(index) % kidImages.length]
+}
+// ───────────────────────────────────────────────────────────────────────────
 
 interface Turma { id: string; nome: string }
 interface Aluno {
@@ -321,10 +337,18 @@ onMounted(async () => {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 1.25rem;
+  margin-bottom: 1.5rem;
 }
-.page-header h2 { margin: 0 0 0.25rem; font-size: 1.5rem; color: var(--acae-primary); }
-.page-header p { margin: 0; color: var(--text-2); font-size: 0.875rem; }
+.page-header h2 {
+  margin: 0 0 0.25rem;
+  font-size: 1.75rem;
+  color: var(--text-1);
+  font-weight: 900;
+  font-family: 'Nunito', sans-serif;
+}
+.page-header p { margin: 0; color: var(--text-2); font-size: 0.9rem; font-weight: 600; }
+
+/* ── Filtro bar ── */
 .filtro-bar {
   display: flex;
   align-items: center;
@@ -332,31 +356,62 @@ onMounted(async () => {
   margin-bottom: 1.25rem;
   flex-wrap: wrap;
 }
-/* Switch roxo estilo iOS */
+/* Switch estilo iOS */
 .modo-switch { display: flex; align-items: center; gap: 0.625rem; cursor: pointer; user-select: none; }
-.sw-opt { font-size: 0.875rem; font-weight: 600; color: var(--text-2); transition: color 0.2s; }
-.sw-opt--dim { color: var(--text-3); font-weight: 400; }
+.sw-opt { font-size: 0.875rem; font-weight: 700; color: var(--text-2); transition: color 0.2s; font-family: 'Nunito', sans-serif; }
+.sw-opt--dim { color: var(--text-3); font-weight: 600; }
 .sw-track {
   width: 44px; height: 24px; border-radius: 12px;
-  background: var(--bg-overlay); border: 1px solid var(--border);
+  background: #E0E7EF; border: 1.5px solid var(--border);
   position: relative; transition: background 0.28s, border-color 0.28s;
 }
-.sw-track--on { background: var(--acae-primary); border-color: var(--acae-primary); box-shadow: 0 0 10px var(--acae-primary-glow); }
+.sw-track--on { background: var(--acae-primary); border-color: var(--acae-primary); box-shadow: 0 0 12px var(--acae-primary-glow); }
 .sw-knob {
   position: absolute; top: 3px; left: 3px;
   width: 16px; height: 16px; border-radius: 50%;
   background: #fff; transition: transform 0.28s cubic-bezier(0.4,0,0.2,1);
-  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.2);
 }
 .sw-track--on .sw-knob { transform: translateX(20px); }
+
+/* ── Avatar na tabela ── */
+.aluno-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2.5px solid var(--acae-primary);
+  box-shadow: 0 2px 8px var(--acae-primary-dim);
+  display: block;
+}
+
+/* ── Card detalhe avatar ── */
+.card-avatar-wrap {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 0.5rem;
+}
+.card-avatar-img {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 4px solid var(--acae-primary);
+  box-shadow: 0 4px 18px var(--acae-primary-glow);
+}
+
+/* ── Form ── */
 .dialog-form { display: flex; flex-direction: column; gap: 1rem; padding: 0.5rem 0; }
 .field { display: flex; flex-direction: column; gap: 0.375rem; }
-.field label { font-size: 0.875rem; font-weight: 500; color: var(--text-2); }
-.card-detalhe { display: flex; flex-direction: column; gap: 0.875rem; padding: 0.25rem 0; }
-.card-nome { font-size: 1.25rem; font-weight: 700; color: var(--text-1); margin-bottom: 0.25rem; }
-.card-campo { display: flex; flex-direction: column; gap: 0.2rem; }
-.card-label { font-size: 0.75rem; font-weight: 600; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.05em; }
-.card-valor { font-size: 0.9375rem; color: var(--text-1); white-space: pre-wrap; }
+.field label { font-size: 0.875rem; font-weight: 700; color: var(--text-2); font-family: 'Nunito', sans-serif; }
+
+/* ── Card detalhe ── */
+.card-detalhe { display: flex; flex-direction: column; gap: 0.875rem; padding: 0.25rem 0; align-items: center; }
+.card-nome { font-size: 1.35rem; font-weight: 900; color: var(--text-1); font-family: 'Nunito', sans-serif; text-align: center; }
+.card-campo { display: flex; flex-direction: column; gap: 0.2rem; width: 100%; border-radius: 10px; padding: 0.3rem 0.5rem; transition: background 0.18s; }
+.card-campo:hover { background: var(--bg-hover); }
+.card-label { font-size: 0.72rem; font-weight: 800; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.06em; }
+.card-valor { font-size: 0.9375rem; color: var(--text-1); white-space: pre-wrap; font-weight: 600; }
 :deep(.cursor-pointer-rows .p-datatable-tbody > tr) { cursor: pointer; }
 </style>
 

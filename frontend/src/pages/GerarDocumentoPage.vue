@@ -1,10 +1,5 @@
 ﻿<template>
   <div class="page-container">
-    <div class="page-header">
-      <h2>Gerar Documento</h2>
-      <p>Selecione o tipo e preencha os dados para gerar um documento pedagógico</p>
-    </div>
-
     <div class="grid">
       <!-- Formulário -->
       <div class="col-12 lg:col-5">
@@ -135,12 +130,15 @@ import DocumentoRevisor from '@/components/DocumentoRevisor.vue'
 import BotaoExportar from '@/components/BotaoExportar.vue'
 import HistoricoRelatorios from '@/components/HistoricoRelatorios.vue'
 import api from '@/services/api'
+import { usePageLayout } from '@/composables/usePageLayout'
 
 interface Aluno { id: string; nome: string; turma_id: string; turma_nome: string }
 interface Rascunho { id: string; status: string; conteudo_gerado: string; conteudo_editado?: string }
 
 const confirm = useConfirm()
 const toast = useToast()
+
+usePageLayout({ title: 'Gerar Documento', subtitle: 'Selecione o tipo e preencha os dados' })
 
 const hoje = new Date()
 hoje.setHours(23, 59, 59, 999)
@@ -354,7 +352,7 @@ async function finalizar() {
 <style scoped>
 .page-container { padding: 1rem; }
 .page-header { margin-bottom: 1.5rem; }
-.page-header h2 { margin: 0 0 0.25rem; font-size: 1.5rem; color: var(--acae-primary); }
+.page-header h2 { margin: 0 0 0.25rem; font-size: 1.75rem; font-weight: 900; font-family: 'Nunito', sans-serif; color: var(--text-1); }
 .page-header p { margin: 0; color: var(--text-2); }
 .form-card, .rascunho-card {
   background: var(--bg-card);

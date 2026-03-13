@@ -1,12 +1,5 @@
 <template>
   <div class="page-container">
-    <div class="page-header">
-      <div>
-        <h2>Gerador de Atividades BNCC</h2>
-        <p>Sorteie atividades pedagógicas baseadas na BNCC e adapte-as ao perfil do aluno com IA</p>
-      </div>
-    </div>
-
     <div class="atividades-layout">
       <!-- ── Painel de Filtros ── -->
       <div class="filtros-card">
@@ -130,7 +123,7 @@
 
         <!-- Loading -->
         <div v-if="loadingGerar" class="estado-loading">
-          <i class="pi pi-spin pi-spinner" style="font-size: 2.5rem; color: #7c3aed" />
+          <i class="pi pi-spin pi-spinner" style="font-size: 2.5rem; color: var(--acae-primary)" />
           <p>Sorteando atividades...</p>
         </div>
 
@@ -246,8 +239,10 @@ import Select from 'primevue/select'
 import Button from 'primevue/button'
 import InputNumber from 'primevue/inputnumber'
 import api from '@/services/api'
+import { usePageLayout } from '@/composables/usePageLayout'
 
-// ── Estado ──────────────────────────────────────────────────
+// ── Estado ────────────────────────────────────────────────────────
+usePageLayout({ title: 'Atividades BNCC', subtitle: 'Sorteie atividades pedagógicas baseadas na BNCC com IA' })
 const turmas = ref<{ id: string; nome: string }[]>([])
 const alunos = ref<{ id: string; nome: string }[]>([])
 const turma_id = ref<string | undefined>()

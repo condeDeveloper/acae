@@ -234,7 +234,8 @@ async function handleGoogle() {
 .tab:hover { background: var(--bg-hover); color: var(--text-1); }
 .tab.active {
   background: var(--acae-primary);
-  color: #fff;
+  color: var(--acae-primary-text);
+  font-weight: 800;
 }
 
 .google-btn {
