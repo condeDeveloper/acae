@@ -92,8 +92,8 @@
         </div>
       </div>
       <template #footer>
-        <Button label="Fechar" text @click="cardVisible = false" />
-        <Button label="Editar" icon="pi pi-pencil" @click="cardVisible = false; abrirDialogEditar(cardAluno!)" />
+        <Button label="Fechar" severity="info" @click="cardVisible = false" />
+        <Button label="Editar" icon="pi pi-pencil" severity="success" @click="cardVisible = false; abrirDialogEditar(cardAluno!)" />
       </template>
     </Dialog>
 
@@ -137,10 +137,11 @@
       </div>
 
       <template #footer>
-        <Button label="Cancelar" text @click="dialogVisible = false" />
+        <Button label="Cancelar" severity="info" @click="dialogVisible = false" />
         <Button
           :label="editando ? 'Salvar' : 'Adicionar Aluno'"
           icon="pi pi-check"
+          severity="success"
           :loading="salvando"
           :disabled="!formValido"
           @click="salvar"
@@ -289,6 +290,7 @@ function confirmarExcluir(aluno: Aluno) {
     acceptLabel: 'Excluir',
     rejectLabel: 'Cancelar',
     acceptClass: 'p-button-danger',
+    rejectClass: 'p-button-info',
     accept: () => excluir(aluno.id),
   })
 }

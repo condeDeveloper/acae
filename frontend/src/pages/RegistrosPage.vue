@@ -224,10 +224,11 @@
       </div>
 
       <template #footer>
-        <Button label="Cancelar" text :disabled="salvando" @click="dialogVisible = false" />
+        <Button label="Cancelar" severity="info" :disabled="salvando" @click="dialogVisible = false" />
         <Button
           :label="editandoId ? 'Salvar Alterações' : 'Criar Registro'"
           icon="pi pi-check"
+          severity="success"
           :loading="salvando"
           :disabled="!formValido || loadingForm"
           @click="salvar"
@@ -532,6 +533,7 @@ function confirmarExcluir(registro: Registro) {
     acceptLabel: 'Excluir',
     rejectLabel: 'Cancelar',
     acceptClass: 'p-button-danger',
+    rejectClass: 'p-button-info',
     accept: () => excluir(registro.id),
   })
 }

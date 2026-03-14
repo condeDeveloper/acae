@@ -44,8 +44,8 @@
         <div class="card-campo"><span class="card-label">Total de Alunos</span><span class="card-valor">{{ cardTurma.total_alunos }}</span></div>
       </div>
       <template #footer>
-        <Button label="Fechar" text @click="cardVisible = false" />
-        <Button label="Editar" icon="pi pi-pencil" @click="cardVisible = false; abrirDialogEditar(cardTurma!)" />
+        <Button label="Fechar" severity="info" @click="cardVisible = false" />
+        <Button label="Editar" icon="pi pi-pencil" severity="success" @click="cardVisible = false; abrirDialogEditar(cardTurma!)" />
       </template>
     </Dialog>
 
@@ -83,10 +83,11 @@
       </div>
 
       <template #footer>
-        <Button label="Cancelar" text @click="dialogVisible = false" />
+        <Button label="Cancelar" severity="info" @click="dialogVisible = false" />
         <Button
           :label="editando ? 'Salvar' : 'Criar Turma'"
           icon="pi pi-check"
+          severity="success"
           :loading="salvando"
           :disabled="!formValido"
           @click="salvar"
