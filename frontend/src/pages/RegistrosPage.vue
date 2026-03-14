@@ -624,6 +624,14 @@ onMounted(async () => {
   flex-shrink: 0;
   transition: transform 0.18s ease, box-shadow 0.18s ease;
 }
+:deep(tr:hover .reg-avatar) {
+  transform: scale(1.13);
+  box-shadow: 0 4px 14px var(--acae-primary-dim);
+}
+:deep(tr:hover .avatar-initials-circle) {
+  transform: scale(1.13);
+  box-shadow: 0 3px 10px rgba(0,0,0,0.18);
+}
 .reg-avatar-anon {
   width: 36px; height: 36px;
   border-radius: 50%;

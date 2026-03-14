@@ -38,6 +38,7 @@ const circleStyle = computed(() => {
     fontFamily:     "'Nunito', sans-serif",
     flexShrink:     '0',
     userSelect:     'none',
+    transition:     'transform 0.15s ease, box-shadow 0.15s ease',
   }
 })
 </script>

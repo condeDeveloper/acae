@@ -36,7 +36,7 @@
       <Column field="escola" header="Escola" sortable />
       <Column field="total_alunos" header="Alunos" sortable style="width:160px">
         <template #body="{ data }">
-          <div class="alunos-stack-cell">
+          <div :class="['alunos-stack-cell', data.total_alunos === 0 && 'alunos-stack-cell--zero']">
             <div v-if="data.total_alunos > 0" class="alunos-stack">
               <div
                 v-for="(al, i) in (data.alunos_preview ?? []).slice(0, 3)"
@@ -45,7 +45,7 @@
                 :style="{ marginLeft: i > 0 ? '-10px' : '0', zIndex: 3 - i }"
               >
                 <img v-if="getAvatarSrc(al.avatar_id)" :src="getAvatarSrc(al.avatar_id)!" class="stack-img" :alt="al.nome" />
-                <div v-else class="stack-anon"><i class="pi pi-user" /></div>
+                <AvatarInitials v-else :nome="al.nome" :seed="al.id" :size="30" />
               </div>
               <div
                 v-if="data.total_alunos > 3"
@@ -142,6 +142,7 @@ import { useAuthStore } from '@/stores/auth'
 import api from '@/services/api'
 import { usePageLayout } from '@/composables/usePageLayout'
 import { getAvatarSrc } from '@/composables/useAvatars'
+import AvatarInitials from '@/components/AvatarInitials.vue'
 
 interface AlunoPreview { id: string; nome: string; avatar_id: number | null }
 
@@ -297,6 +298,7 @@ onMounted(carregar)
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transition: transform 0.15s ease;
 }
 .stack-anon {
   width: 100%;
@@ -322,6 +324,16 @@ onMounted(carregar)
   font-weight: 700;
   font-size: 0.9rem;
   color: var(--text-1);
+}
+.alunos-stack-cell--zero {
+  justify-content: center;
+}
+:deep(tr:hover .avatar-initials-circle) {
+  transform: scale(1.15);
+  box-shadow: 0 3px 10px rgba(0,0,0,0.18);
+}
+:deep(tr:hover .stack-img) {
+  transform: scale(1.15);
 }
 
 /* ── Empty state ── */

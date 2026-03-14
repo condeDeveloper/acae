@@ -407,6 +407,15 @@ onMounted(async () => {
   border: 2.5px solid var(--acae-primary);
   box-shadow: 0 2px 8px var(--acae-primary-dim);
   flex-shrink: 0;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+:deep(tr:hover .aluno-avatar) {
+  transform: scale(1.13);
+  box-shadow: 0 4px 14px var(--acae-primary-dim);
+}
+:deep(tr:hover .avatar-initials-circle) {
+  transform: scale(1.13);
+  box-shadow: 0 3px 10px rgba(0,0,0,0.18);
 }
 .aluno-avatar--anon {
   background: var(--bg-overlay);

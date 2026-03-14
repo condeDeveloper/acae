@@ -131,20 +131,14 @@
               </span>
             </div>
             <div class="resultado-acoes">
-              <Button
-                icon="pi pi-copy"
-                label="Copiar"
-                size="small"
-                outlined
-                @click="copiarTexto"
-              />
-              <Button
-                icon="pi pi-print"
-                label="Imprimir"
-                size="small"
-                outlined
-                @click="imprimirDocumento"
-              />
+              <button :class="['acao-btn', 'acao-btn--copiar', copiado && 'acao-btn--copiado']" @click="copiarTexto">
+                <i :class="copiado ? 'pi pi-check' : 'pi pi-copy'" />
+                {{ copiado ? 'Copiado!' : 'Copiar' }}
+              </button>
+              <button class="acao-btn acao-btn--download" @click="downloadDocumento">
+                <i class="pi pi-download" />
+                Download
+              </button>
             </div>
           </div>
 
@@ -185,6 +179,7 @@ const loadingAlunos = ref(false)
 const loadingGerar = ref(false)
 const erroGerar = ref('')
 const textoGerado = ref('')
+const copiado = ref(false)
 const alunoNome = ref('')
 const alunoId = ref('')
 const alunoAvatarId = ref<number | null>(null)
@@ -265,30 +260,22 @@ async function gerarOcorrencia() {
 async function copiarTexto() {
   try {
     await navigator.clipboard.writeText(textoGerado.value)
-    toast.add({ severity: 'success', summary: 'Copiado!', detail: 'Texto copiado para a área de transferência.', life: 2500 })
+    copiado.value = true
+    setTimeout(() => { copiado.value = false }, 3000)
   } catch {
     toast.add({ severity: 'error', summary: 'Erro', detail: 'Não foi possível copiar o texto.', life: 3000 })
   }
 }
 
-function imprimirDocumento() {
-  const conteudo = textoGerado.value
-  const janela = window.open('', '_blank')
-  if (!janela) return
-  janela.document.write(`
-    <html>
-      <head>
-        <title>Ocorrência — ${tipoLabel.value} — ${alunoNome.value}</title>
-        <style>
-          body { font-family: 'Times New Roman', serif; font-size: 13pt; margin: 3cm 2.5cm; line-height: 1.8; color: #000; }
-          pre { white-space: pre-wrap; font-family: inherit; font-size: inherit; }
-        </style>
-      </head>
-      <body><pre>${conteudo.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre></body>
-    </html>`)
-  janela.document.close()
-  janela.focus()
-  janela.print()
+function downloadDocumento() {
+  const nomeArquivo = `ocorrencia-${tipoAtual.value}-${alunoNome.value.replace(/\s+/g, '-').toLowerCase()}.txt`
+  const blob = new Blob([textoGerado.value], { type: 'text/plain;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = nomeArquivo
+  a.click()
+  URL.revokeObjectURL(url)
 }
 
 onMounted(carregarTurmas)
@@ -601,5 +588,45 @@ onMounted(carregarTurmas)
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+}
+
+/* ── Botões de ação do resultado ── */
+.acao-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 1rem;
+  border-radius: 8px;
+  border: 2px solid;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: inherit;
+  line-height: 1;
+}
+
+.acao-btn--copiar {
+  border-color: var(--acae-blue);
+  background: color-mix(in srgb, var(--acae-blue) 12%, transparent);
+  color: var(--acae-blue);
+}
+.acao-btn--copiar:hover {
+  background: color-mix(in srgb, var(--acae-blue) 22%, transparent);
+}
+.acao-btn--copiado {
+  background: var(--acae-blue) !important;
+  color: #fff !important;
+  border-color: var(--acae-blue) !important;
+}
+
+.acao-btn--download {
+  border-color: var(--border-1);
+  background: var(--bg-base);
+  color: var(--text-1);
+}
+.acao-btn--download:hover {
+  border-color: var(--text-2);
+  background: var(--bg-hover, var(--bg-surface));
 }
 </style>
