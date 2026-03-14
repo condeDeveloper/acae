@@ -4,7 +4,15 @@
   </Teleport>
 
   <div class="page-container">
+    <!-- Empty state quando não há turmas -->
+    <div v-if="!loading && turmas.length === 0" class="empty-state">
+      <i class="pi pi-graduation-cap empty-icon" />
+      <p class="empty-title">Nenhuma turma cadastrada ainda</p>
+      <p class="empty-sub">Clique em "Nova Turma" para começar a organizar seus alunos</p>
+    </div>
+
     <DataTable
+      v-else
       :value="turmas"
       :loading="loading"
       stripedRows
@@ -26,7 +34,29 @@
         </template>
       </Column>
       <Column field="escola" header="Escola" sortable />
-      <Column field="total_alunos" header="Alunos" sortable style="width:90px;text-align:center" />
+      <Column field="total_alunos" header="Alunos" sortable style="width:160px">
+        <template #body="{ data }">
+          <div class="alunos-stack-cell">
+            <div v-if="data.total_alunos > 0" class="alunos-stack">
+              <div
+                v-for="(al, i) in (data.alunos_preview ?? []).slice(0, 3)"
+                :key="al.id"
+                class="stack-bubble"
+                :style="{ marginLeft: i > 0 ? '-10px' : '0', zIndex: 3 - i }"
+              >
+                <img v-if="getAvatarSrc(al.avatar_id)" :src="getAvatarSrc(al.avatar_id)!" class="stack-img" :alt="al.nome" />
+                <div v-else class="stack-anon"><i class="pi pi-user" /></div>
+              </div>
+              <div
+                v-if="data.total_alunos > 3"
+                class="stack-bubble stack-dots"
+                :style="{ marginLeft: '-10px', zIndex: 0 }"
+              >···</div>
+            </div>
+            <span class="alunos-count">{{ data.total_alunos }}</span>
+          </div>
+        </template>
+      </Column>
       <Column header="Ações" style="width:90px">
         <template #body="{ data }">
           <Button icon="pi pi-pencil" v-tooltip.top="'Editar'" text rounded @click.stop="abrirDialogEditar(data)" />
@@ -111,6 +141,9 @@ import { useToast } from 'primevue/usetoast'
 import { useAuthStore } from '@/stores/auth'
 import api from '@/services/api'
 import { usePageLayout } from '@/composables/usePageLayout'
+import { getAvatarSrc } from '@/composables/useAvatars'
+
+interface AlunoPreview { id: string; nome: string; avatar_id: number | null }
 
 interface Turma {
   id: string
@@ -120,6 +153,7 @@ interface Turma {
   escola: string
   status: string
   total_alunos: number
+  alunos_preview: AlunoPreview[]
 }
 
 const toast = useToast()
@@ -238,5 +272,82 @@ onMounted(carregar)
 .card-label { font-size: 0.75rem; font-weight: 600; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.05em; }
 .card-valor { font-size: 0.9375rem; color: var(--text-1); }
 :deep(.cursor-pointer-rows .p-datatable-tbody > tr) { cursor: pointer; }
+
+/* ── Avatar stack na coluna Alunos ── */
+.alunos-stack-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.alunos-stack {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+.stack-bubble {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 2px solid var(--bg-card);
+  overflow: hidden;
+  flex-shrink: 0;
+  position: relative;
+}
+.stack-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.stack-anon {
+  width: 100%;
+  height: 100%;
+  background: var(--bg-overlay);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-3);
+  font-size: 0.85rem;
+}
+.stack-dots {
+  background: var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: var(--text-2);
+  letter-spacing: -1px;
+}
+.alunos-count {
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--text-1);
+}
+
+/* ── Empty state ── */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 5rem 2rem;
+  text-align: center;
+  gap: 0.75rem;
+}
+.empty-icon {
+  font-size: 3.5rem;
+  color: var(--text-3);
+}
+.empty-title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--text-2);
+  margin: 0;
+}
+.empty-sub {
+  font-size: 0.875rem;
+  color: var(--text-3);
+  margin: 0;
+}
 </style>
 

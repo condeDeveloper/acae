@@ -58,9 +58,15 @@
       @row-click="abrirCard($event.data)"
     >
       <Column v-if="modoFiltro === 'todos'" field="aluno_nome" header="Aluno" sortable>
-        <template #body="{ data, index }">
+        <template #body="{ data }">
           <div class="reg-nome-cell">
-            <img :src="getKidImage(index)" class="reg-avatar" alt="avatar" />
+            <img
+              v-if="getAvatarSrc(data.aluno_avatar_id)"
+              :src="getAvatarSrc(data.aluno_avatar_id)!"
+              class="reg-avatar"
+              alt="avatar"
+            />
+            <div v-else class="reg-avatar-anon"><i class="pi pi-user" /></div>
             <span>{{ data.aluno_nome }}</span>
           </div>
         </template>
@@ -254,6 +260,7 @@ import { useConfirm } from 'primevue/useconfirm'
 import BnccSelector from '@/components/BnccSelector.vue'
 import api from '@/services/api'
 import { usePageLayout } from '@/composables/usePageLayout'
+import { getAvatarSrc } from '@/composables/useAvatars'
 
 interface Turma { id: string; nome: string }
 interface Aluno  { id: string; nome: string }
@@ -263,7 +270,9 @@ interface Registro {
   bncc_refs: string[]
   created_at: string
   updated_at: string
+  aluno_id?: string
   aluno_nome?: string
+  aluno_avatar_id?: number | null
   turma_nome?: string
 }
 interface RegistroFull extends Registro {
@@ -278,13 +287,7 @@ interface RegistroFull extends Registro {
 
 usePageLayout({ title: 'Registros Pedagógicos', subtitle: 'Registre as atividades semanais dos alunos' })
 
-// ── Kid avatars ──
-const kidModules = import.meta.glob('@/assets/drawings/kid*.png', { eager: true })
-const kidImages: string[] = Object.values(kidModules).map((m: any) => m.default)
-function getKidImage(index: number) {
-  if (kidImages.length === 0) return ''
-  return kidImages[Math.abs(index) % kidImages.length]
-}
+
 
 const toast   = useToast()
 const confirm = useConfirm()
@@ -619,6 +622,18 @@ onMounted(async () => {
   display: block;
   flex-shrink: 0;
   transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+.reg-avatar-anon {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  background: var(--surface-100, #f3f4f6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--text-3);
+  font-size: 1rem;
 }
 .reg-nome-cell {
   display: flex;

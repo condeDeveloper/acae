@@ -28,6 +28,7 @@ export default async function alunosRoutes(fastify: FastifyInstance) {
           turma_nome: a.turma.nome,
           data_nascimento: a.data_nascimento,
           necessidades_educacionais: a.necessidades_educacionais,
+          avatar_id: a.avatar_id,
         })),
         total: alunos.length,
       })
@@ -66,6 +67,7 @@ export default async function alunosRoutes(fastify: FastifyInstance) {
           necessidades_educacionais: a.necessidades_educacionais,
           status: a.status,
           turma_id: a.turma_id,
+          avatar_id: a.avatar_id,
           created_at: a.created_at,
         })),
         total: alunos.length,
@@ -86,6 +88,7 @@ export default async function alunosRoutes(fastify: FastifyInstance) {
             nome: { type: 'string', minLength: 2, maxLength: 200 },
             data_nascimento: { type: 'string', format: 'date', nullable: true },
             necessidades_educacionais: { type: 'string', maxLength: 2000, nullable: true },
+            avatar_id: { type: 'integer', minimum: 1, maximum: 8, nullable: true },
           },
           additionalProperties: false,
         },
@@ -98,7 +101,9 @@ export default async function alunosRoutes(fastify: FastifyInstance) {
         nome: string
         data_nascimento?: string | null
         necessidades_educacionais?: string | null
+        avatar_id?: number | null
       }
+      const { avatar_id } = request.body as { avatar_id?: number | null }
 
       // Verifica que a turma pertence ao professor
       const turma = await prisma.turma.findFirst({
@@ -128,6 +133,7 @@ export default async function alunosRoutes(fastify: FastifyInstance) {
           nome,
           ...(nascimentoDate ? { data_nascimento: nascimentoDate } : {}),
           necessidades_educacionais: necessidades_educacionais ?? null,
+          avatar_id: avatar_id ?? null,
           turma_id: turmaId,
         },
       })
@@ -137,6 +143,7 @@ export default async function alunosRoutes(fastify: FastifyInstance) {
         nome: aluno.nome,
         data_nascimento: aluno.data_nascimento,
         necessidades_educacionais: aluno.necessidades_educacionais,
+        avatar_id: aluno.avatar_id,
         status: aluno.status,
         turma_id: aluno.turma_id,
         created_at: aluno.created_at,
@@ -155,6 +162,7 @@ export default async function alunosRoutes(fastify: FastifyInstance) {
           properties: {
             necessidades_educacionais: { type: 'string', maxLength: 2000, nullable: true },
             nome: { type: 'string', minLength: 2, maxLength: 200 },
+            avatar_id: { type: ['integer', 'null'], minimum: 1, maximum: 8 },
           },
           additionalProperties: false,
         },
@@ -163,7 +171,7 @@ export default async function alunosRoutes(fastify: FastifyInstance) {
     async (request, reply) => {
       const professor = request.professor
       const { alunoId } = request.params as { alunoId: string }
-      const body = request.body as { nome?: string; necessidades_educacionais?: string }
+      const body = request.body as { nome?: string; necessidades_educacionais?: string; avatar_id?: number | null }
 
       // Verifica que o aluno pertence a uma turma do professor
       const aluno = await prisma.aluno.findFirst({
@@ -177,10 +185,11 @@ export default async function alunosRoutes(fastify: FastifyInstance) {
         return reply.code(404).send({ error: 'Aluno não encontrado' })
       }
 
-      const updateData: { nome?: string; necessidades_educacionais?: string | null } = {}
+      const updateData: { nome?: string; necessidades_educacionais?: string | null; avatar_id?: number | null } = {}
       if (body.nome !== undefined) updateData.nome = body.nome
       if (body.necessidades_educacionais !== undefined)
         updateData.necessidades_educacionais = body.necessidades_educacionais || null
+      if ('avatar_id' in body) updateData.avatar_id = body.avatar_id ?? null
 
       const updated = await prisma.aluno.update({
         where: { id: alunoId },
@@ -191,6 +200,7 @@ export default async function alunosRoutes(fastify: FastifyInstance) {
         id: updated.id,
         nome: updated.nome,
         necessidades_educacionais: updated.necessidades_educacionais,
+        avatar_id: updated.avatar_id,
         status: updated.status,
         turma_id: updated.turma_id,
       })

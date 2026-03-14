@@ -106,6 +106,20 @@ model Turma {
 }
 
 // ─────────────────────────────────────────────────────────────
+// 2.5 AVATAR DE ALUNO
+// ─────────────────────────────────────────────────────────────
+
+model AvatarImagem {
+  id      Int    @id
+  nome    String
+  arquivo String
+
+  alunos Aluno[]
+
+  @@map("avatar_imagens")
+}
+
+// ─────────────────────────────────────────────────────────────
 // 3. ALUNO
 // ─────────────────────────────────────────────────────────────
 
@@ -115,6 +129,9 @@ model Aluno {
   data_nascimento           DateTime?   @db.Date
   necessidades_educacionais String?     @db.Text
   status                    StatusAluno @default(ativo)
+
+  avatar_id Int?
+  avatar    AvatarImagem? @relation(fields: [avatar_id], references: [id])
 
   turma_id String @db.Uuid
   turma    Turma  @relation(fields: [turma_id], references: [id])

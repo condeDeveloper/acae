@@ -18,6 +18,12 @@ export default async function turmasRoutes(fastify: FastifyInstance) {
         },
         include: {
           _count: { select: { alunos: { where: { status: 'ativo' } } } },
+          alunos: {
+            where: { status: 'ativo' },
+            orderBy: { created_at: 'desc' },
+            take: 3,
+            select: { id: true, nome: true, avatar_id: true },
+          },
         },
         orderBy: { created_at: 'desc' },
       })
@@ -31,6 +37,7 @@ export default async function turmasRoutes(fastify: FastifyInstance) {
           escola: t.escola,
           status: t.status,
           total_alunos: t._count.alunos,
+          alunos_preview: t.alunos.map(a => ({ id: a.id, nome: a.nome, avatar_id: a.avatar_id })),
           created_at: t.created_at,
         })),
         total: turmas.length,

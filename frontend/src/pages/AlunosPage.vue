@@ -29,12 +29,19 @@
       />
     </div>
 
+    <!-- Empty state quando não há alunos -->
+    <div v-if="!loading && alunosFiltrados.length === 0" class="empty-state">
+      <i class="pi pi-users empty-icon" />
+      <p class="empty-title">Nenhum aluno encontrado</p>
+      <p class="empty-sub">Adicione alunos clicando em "Novo Aluno" ou ajuste o filtro de turma</p>
+    </div>
+
     <DataTable
+      v-else
       :value="alunosFiltrados"
       :loading="loading"
       stripedRows
       responsiveLayout="scroll"
-      emptyMessage="Nenhum aluno encontrado."
       sortField="turma_nome"
       :sortOrder="1"
       :paginator="alunosFiltrados.length > 10"
@@ -44,9 +51,10 @@
       @row-click="abrirCard($event.data)"
     >
       <Column field="nome" header="Nome" sortable>
-        <template #body="{ data, index }">
+        <template #body="{ data }">
           <div class="aluno-nome-cell">
-            <img :src="getKidImage(index)" class="aluno-avatar" alt="avatar" />
+            <img v-if="getAvatarSrc(data.avatar_id)" :src="getAvatarSrc(data.avatar_id)!" class="aluno-avatar" alt="avatar" />
+            <div v-else class="aluno-avatar aluno-avatar--anon"><i class="pi pi-user" /></div>
             <span>{{ data.nome }}</span>
           </div>
         </template>
@@ -76,7 +84,8 @@
     <Dialog v-model:visible="cardVisible" header="Detalhes do Aluno" modal :style="{ width: '420px' }">
       <div v-if="cardAluno" class="card-detalhe">
         <div class="card-avatar-wrap">
-          <img :src="getKidImage(alunos.findIndex(a => a.id === cardAluno!.id))" class="card-avatar-img" alt="avatar" />
+          <img v-if="getAvatarSrc(cardAluno.avatar_id)" :src="getAvatarSrc(cardAluno.avatar_id)!" class="card-avatar-img" alt="avatar" />
+          <div v-else class="card-avatar-anon"><i class="pi pi-user" /></div>
         </div>
         <div class="card-nome">{{ cardAluno.nome }}</div>
         <div class="card-campo"><span class="card-label">Turma</span><span class="card-valor">{{ cardAluno.turma_nome }}</span></div>
@@ -105,6 +114,10 @@
       :style="{ width: '440px' }"
     >
       <div class="dialog-form">
+        <div class="field">
+          <label>Avatar</label>
+          <AvatarSelector v-model="form.avatar_id" />
+        </div>
         <div class="field">
           <label>Nome Completo *</label>
           <InputText v-model="form.nome" placeholder="Nome do aluno" fluid />
@@ -166,17 +179,10 @@ import { useToast } from 'primevue/usetoast'
 import { useConfirm } from 'primevue/useconfirm'
 import api from '@/services/api'
 import { usePageLayout } from '@/composables/usePageLayout'
+import { getAvatarSrc } from '@/composables/useAvatars'
+import AvatarSelector from '@/components/AvatarSelector.vue'
 
-// ── Kid avatars (drawings) ──────────────────────────────────────────────────
 usePageLayout({ title: 'Alunos', subtitle: 'Gerencie os alunos das suas turmas' })
-const kidModules = import.meta.glob('@/assets/drawings/kid*.png', { eager: true })
-const kidImages: string[] = Object.values(kidModules).map((m: any) => m.default)
-
-function getKidImage(index: number): string {
-  if (kidImages.length === 0) return ''
-  return kidImages[Math.abs(index) % kidImages.length]
-}
-// ───────────────────────────────────────────────────────────────────────────
 
 interface Turma { id: string; nome: string }
 interface Aluno {
@@ -186,6 +192,7 @@ interface Aluno {
   necessidades_educacionais: string | null
   turma_id: string
   turma_nome: string
+  avatar_id: number | null
 }
 
 const toast = useToast()
@@ -221,7 +228,8 @@ const form = ref<{
   turma_id: string
   data_nascimento: Date | null
   necessidades_educacionais: string
-}>({ nome: '', turma_id: '', data_nascimento: null, necessidades_educacionais: '' })
+  avatar_id: number | null
+}>({ nome: '', turma_id: '', data_nascimento: null, necessidades_educacionais: '', avatar_id: null })
 
 const formValido = computed(() => form.value.nome.trim().length > 0 && form.value.turma_id !== '')
 
@@ -267,6 +275,7 @@ function abrirDialogNovo() {
     turma_id: turmaSelecionada.value ?? '',
     data_nascimento: null,
     necessidades_educacionais: '',
+    avatar_id: null,
   }
   dialogVisible.value = true
 }
@@ -278,6 +287,7 @@ function abrirDialogEditar(aluno: Aluno) {
     turma_id: aluno.turma_id,
     data_nascimento: aluno.data_nascimento ? new Date(aluno.data_nascimento) : null,
     necessidades_educacionais: aluno.necessidades_educacionais ?? '',
+    avatar_id: aluno.avatar_id ?? null,
   }
   dialogVisible.value = true
 }
@@ -309,17 +319,19 @@ async function salvar() {
   salvando.value = true
   try {
     if (editando.value) {
-      const patch: Record<string, string> = { nome: form.value.nome }
+      const patch: Record<string, unknown> = { nome: form.value.nome }
       if (form.value.necessidades_educacionais.trim())
         patch.necessidades_educacionais = form.value.necessidades_educacionais.trim()
+      patch.avatar_id = form.value.avatar_id ?? null
       await api.patch(`/api/alunos/${editando.value.id}`, patch)
       toast.add({ severity: 'success', summary: 'Aluno atualizado', life: 3000 })
     } else {
-      const payload: Record<string, string> = { nome: form.value.nome.trim() }
+      const payload: Record<string, unknown> = { nome: form.value.nome.trim() }
       if (form.value.data_nascimento)
         payload.data_nascimento = form.value.data_nascimento.toISOString().split('T')[0]
       if (form.value.necessidades_educacionais.trim())
         payload.necessidades_educacionais = form.value.necessidades_educacionais.trim()
+      if (form.value.avatar_id) payload.avatar_id = form.value.avatar_id
       await api.post(`/api/turmas/${form.value.turma_id}/alunos`, payload)
       toast.add({ severity: 'success', summary: 'Aluno adicionado', life: 3000 })
     }
@@ -395,6 +407,15 @@ onMounted(async () => {
   box-shadow: 0 2px 8px var(--acae-primary-dim);
   flex-shrink: 0;
 }
+.aluno-avatar--anon {
+  background: var(--bg-overlay);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  color: var(--text-3);
+  border: 2px solid var(--border);
+}
 /* ── Botões de ação lado a lado ── */
 .acoes-cell {
   display: flex;
@@ -415,6 +436,44 @@ onMounted(async () => {
   object-fit: cover;
   border: 4px solid var(--acae-primary);
   box-shadow: 0 4px 18px var(--acae-primary-glow);
+}
+.card-avatar-anon {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  background: var(--bg-overlay);
+  border: 3px dashed var(--border-hover);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5rem;
+  color: var(--text-3);
+}
+
+/* ── Empty state ── */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 5rem 2rem;
+  text-align: center;
+  gap: 0.75rem;
+}
+.empty-icon {
+  font-size: 3.5rem;
+  color: var(--text-3);
+}
+.empty-title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--text-2);
+  margin: 0;
+}
+.empty-sub {
+  font-size: 0.875rem;
+  color: var(--text-3);
+  margin: 0;
 }
 
 /* ── Form ── */
