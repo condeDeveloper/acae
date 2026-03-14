@@ -51,10 +51,10 @@ const navItems = [
   { to: '/alunos',           label: 'Alunos',    icon: 'pi pi-user' },
   { to: '/registros',        label: 'Registros', icon: 'pi pi-book' },
   { to: '/documentos/gerar', label: 'Gerar',     icon: 'pi pi-file-edit' },
-  { to: '/chamada',          label: 'Chamada',   icon: 'pi pi-calendar-clock' },
   { to: '/documentos',       label: 'Histórico', icon: 'pi pi-file' },
-  { to: '/atividades',       label: 'BNCC',      icon: 'pi pi-th-large' },
-  { to: '/ocorrencias',      label: 'Ocorrências', icon: 'pi pi-file-edit' },
+  { to: '/chamada',          label: 'Chamada',   icon: 'pi pi-calendar-clock' },
+  { to: '/atividades',       label: 'Atividades', icon: 'pi pi-th-large' },
+  { to: '/ocorrencias',      label: 'Ocorrências', icon: 'pi pi-megaphone' },
   { to: '/perfil',           label: 'Perfil',    icon: 'pi pi-cog' },
 ]
 </script>
