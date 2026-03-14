@@ -260,6 +260,7 @@ import { useConfirm } from 'primevue/useconfirm'
 import BnccSelector from '@/components/BnccSelector.vue'
 import api from '@/services/api'
 import { usePageLayout } from '@/composables/usePageLayout'
+import { usePageLoading } from '@/composables/usePageLoading'
 import { getAvatarSrc } from '@/composables/useAvatars'
 import AvatarInitials from '@/components/AvatarInitials.vue'
 
@@ -287,6 +288,7 @@ interface RegistroFull extends Registro {
 }
 
 usePageLayout({ title: 'Registros Pedagógicos', subtitle: 'Registre as atividades semanais dos alunos' })
+const { trackLoad } = usePageLoading()
 
 
 
@@ -552,10 +554,10 @@ async function excluir(id: string) {
   }
 }
 
-onMounted(async () => {
+onMounted(() => trackLoad((async () => {
   await carregarTurmas()
   await carregarTodos()
-})
+})()))
 </script>
 
 <style scoped>

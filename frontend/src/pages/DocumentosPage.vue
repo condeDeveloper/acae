@@ -61,6 +61,7 @@ import Dialog from 'primevue/dialog'
 import BotaoExportar from '@/components/BotaoExportar.vue'
 import api from '@/services/api'
 import { usePageLayout } from '@/composables/usePageLayout'
+import { usePageLoading } from '@/composables/usePageLoading'
 
 interface Documento {
   id: string
@@ -75,6 +76,7 @@ interface Documento {
 
 const documentos = ref<Documento[]>([])
 usePageLayout({ title: 'Histórico de Documentos', subtitle: 'Clique em um documento para baixar' })
+const { trackLoad } = usePageLoading()
 const loading = ref(false)
 const downloadVisible = ref(false)
 const selecionado = ref<Documento | null>(null)
@@ -102,16 +104,14 @@ function abrirFormato(doc: Documento) {
   formatoVisible.value = true
 }
 
-onMounted(async () => {
+onMounted(() => {
   loading.value = true
-  try {
-    const { data } = await api.get<{ data: Documento[] }>('/api/documentos')
-    documentos.value = data.data
-  } catch {
-    /* handled by interceptor */
-  } finally {
-    loading.value = false
-  }
+  trackLoad(
+    api.get<{ data: Documento[] }>('/api/documentos')
+      .then(({ data }) => { documentos.value = data.data })
+      .catch(() => { /* handled by interceptor */ })
+      .finally(() => { loading.value = false })
+  )
 })
 </script>
 

@@ -179,11 +179,13 @@ import { useToast } from 'primevue/usetoast'
 import { useConfirm } from 'primevue/useconfirm'
 import api from '@/services/api'
 import { usePageLayout } from '@/composables/usePageLayout'
+import { usePageLoading } from '@/composables/usePageLoading'
 import { getAvatarSrc } from '@/composables/useAvatars'
 import AvatarSelector from '@/components/AvatarSelector.vue'
 import AvatarInitials from '@/components/AvatarInitials.vue'
 
 usePageLayout({ title: 'Alunos', subtitle: 'Gerencie os alunos das suas turmas' })
+const { trackLoad } = usePageLoading()
 
 interface Turma { id: string; nome: string }
 interface Aluno {
@@ -345,9 +347,7 @@ async function salvar() {
   }
 }
 
-onMounted(async () => {
-  await Promise.all([carregarTurmas(), carregarAlunos()])
-})
+onMounted(() => trackLoad(Promise.all([carregarTurmas(), carregarAlunos()])))
 </script>
 
 <style scoped>
