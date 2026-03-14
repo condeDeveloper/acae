@@ -66,7 +66,7 @@
               class="reg-avatar"
               alt="avatar"
             />
-            <div v-else class="reg-avatar-anon"><i class="pi pi-user" /></div>
+            <AvatarInitials v-else :nome="data.aluno_nome" :seed="data.aluno_id ?? data.aluno_nome" :size="36" />
             <span>{{ data.aluno_nome }}</span>
           </div>
         </template>
@@ -261,6 +261,7 @@ import BnccSelector from '@/components/BnccSelector.vue'
 import api from '@/services/api'
 import { usePageLayout } from '@/composables/usePageLayout'
 import { getAvatarSrc } from '@/composables/useAvatars'
+import AvatarInitials from '@/components/AvatarInitials.vue'
 
 interface Turma { id: string; nome: string }
 interface Aluno  { id: string; nome: string }

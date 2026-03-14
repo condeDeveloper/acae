@@ -30,3 +30,24 @@ export function getAvatarSrc(avatarId?: number | null): string | null {
   if (!avatarId) return null
   return avatarMap.get(avatarId) ?? null
 }
+
+// ── Avatar colors — deterministic per student ──────────────────
+export const AVATAR_COLOR_STYLES = {
+  yellow: { bg: '#FFCC02', text: '#856900', border: '#E8A800' },
+  green:  { bg: '#3DC98A', text: '#fff',    border: '#2aa870' },
+  blue:   { bg: '#4A90E2', text: '#fff',    border: '#2f72c8' },
+  red:    { bg: '#F25C5C', text: '#fff',    border: '#d93c3c' },
+} as const
+
+export type AvatarColor = keyof typeof AVATAR_COLOR_STYLES
+
+const COLOR_KEYS = Object.keys(AVATAR_COLOR_STYLES) as AvatarColor[]
+
+/** Returns a consistent color for a given student seed (ID or name). */
+export function getAvatarColor(seed: string): AvatarColor {
+  let hash = 0
+  for (let i = 0; i < seed.length; i++) {
+    hash = (hash * 31 + seed.charCodeAt(i)) >>> 0
+  }
+  return COLOR_KEYS[hash % COLOR_KEYS.length]
+}

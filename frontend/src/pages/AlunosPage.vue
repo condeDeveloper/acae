@@ -54,7 +54,7 @@
         <template #body="{ data }">
           <div class="aluno-nome-cell">
             <img v-if="getAvatarSrc(data.avatar_id)" :src="getAvatarSrc(data.avatar_id)!" class="aluno-avatar" alt="avatar" />
-            <div v-else class="aluno-avatar aluno-avatar--anon"><i class="pi pi-user" /></div>
+            <AvatarInitials v-else :nome="data.nome" :seed="data.id" :size="38" />
             <span>{{ data.nome }}</span>
           </div>
         </template>
@@ -85,7 +85,7 @@
       <div v-if="cardAluno" class="card-detalhe">
         <div class="card-avatar-wrap">
           <img v-if="getAvatarSrc(cardAluno.avatar_id)" :src="getAvatarSrc(cardAluno.avatar_id)!" class="card-avatar-img" alt="avatar" />
-          <div v-else class="card-avatar-anon"><i class="pi pi-user" /></div>
+          <AvatarInitials v-else :nome="cardAluno.nome" :seed="cardAluno.id" :size="90" />
         </div>
         <div class="card-nome">{{ cardAluno.nome }}</div>
         <div class="card-campo"><span class="card-label">Turma</span><span class="card-valor">{{ cardAluno.turma_nome }}</span></div>
@@ -181,6 +181,7 @@ import api from '@/services/api'
 import { usePageLayout } from '@/composables/usePageLayout'
 import { getAvatarSrc } from '@/composables/useAvatars'
 import AvatarSelector from '@/components/AvatarSelector.vue'
+import AvatarInitials from '@/components/AvatarInitials.vue'
 
 usePageLayout({ title: 'Alunos', subtitle: 'Gerencie os alunos das suas turmas' })
 

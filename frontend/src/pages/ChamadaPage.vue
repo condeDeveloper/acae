@@ -112,7 +112,7 @@
               :alt="p.aluno_nome"
               class="avatar-img"
             />
-            <div v-else class="avatar-initials">{{ iniciais(p.aluno_nome) }}</div>
+            <AvatarInitials v-else :nome="p.aluno_nome" :seed="p.aluno_id" :size="64" />
             <div class="status-badge" :class="{
               'badge-presente': p.presente && esTocado(p.aluno_id),
               'badge-ausente': !p.presente && esTocado(p.aluno_id),
@@ -256,6 +256,7 @@ import Column from 'primevue/column'
 import Tag from 'primevue/tag'
 import { useToast } from 'primevue/usetoast'
 import { getAvatarSrc } from '@/composables/useAvatars'
+import AvatarInitials from '@/components/AvatarInitials.vue'
 import api from '@/services/api'
 import { usePageLayout } from '@/composables/usePageLayout'
 
@@ -592,7 +593,7 @@ watch(turmaSelecionada, () => {
   cursor: default;
 }
 .aluno-card.is-neutro {
-  border-color: var(--acae-primary);
+  border-color: var(--acae-blue);
   border-style: dashed;
   background: var(--bg-surface);
   opacity: 0.85;
@@ -621,20 +622,7 @@ watch(turmaSelecionada, () => {
   border: 2px solid var(--border);
   background: var(--bg-card);
 }
-.avatar-initials {
-  width: 64px;
-  height: 64px;
-  border-radius: 50%;
-  background: var(--acae-primary-dim);
-  color: var(--acae-primary-text);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.25rem;
-  font-weight: 900;
-  font-family: 'Nunito', sans-serif;
-  border: 2px solid var(--acae-primary);
-}
+/* avatar-initials now handled by AvatarInitials.vue component */
 .status-badge {
   position: absolute;
   bottom: 0;
@@ -651,7 +639,7 @@ watch(turmaSelecionada, () => {
 }
 .badge-presente { background: #22c55e; color: #fff; }
 .badge-ausente  { background: #ef4444; color: #fff; }
-.badge-neutro   { background: var(--acae-primary); color: #fff; opacity: 0.7; }
+.badge-neutro   { background: var(--acae-blue); color: #fff; opacity: 0.7; }
 
 .aluno-nome {
   font-size: 0.8rem;

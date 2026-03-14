@@ -130,7 +130,7 @@
           <div class="resultado-info">
             <span class="aluno-tag">
               <img v-if="getAvatarSrc(alunoAvatarId)" :src="getAvatarSrc(alunoAvatarId)!" class="aluno-tag-img" alt="avatar" />
-              <div v-else class="aluno-tag-anon"><i class="pi pi-user" /></div>
+              <AvatarInitials v-else :nome="alunoNome" :seed="alunoId || alunoNome" :size="26" />
               {{ alunoNome }}
             </span>
             <span class="count-tag">{{ atividadesGeradas.length }} atividade{{ atividadesGeradas.length !== 1 ? 's' : '' }} sorteada{{ atividadesGeradas.length !== 1 ? 's' : '' }}</span>
@@ -243,6 +243,7 @@ import Tag from 'primevue/tag'
 import api from '@/services/api'
 import { usePageLayout } from '@/composables/usePageLayout'
 import { getAvatarSrc } from '@/composables/useAvatars'
+import AvatarInitials from '@/components/AvatarInitials.vue'
 
 // ── Estado ────────────────────────────────────────────────────────
 usePageLayout({ title: 'Atividades BNCC', subtitle: 'Sorteie atividades pedagógicas baseadas na BNCC com IA' })
@@ -251,6 +252,7 @@ const alunos = ref<{ id: string; nome: string; avatar_id: number | null }[]>([])
 const turma_id = ref<string | undefined>()
 const aluno_id = ref<string | undefined>()
 const alunoNome = ref('')
+const alunoId = ref('')
 const alunoAvatarId = ref<number | null>(null)
 const loadingAlunos = ref(false)
 const quantidade = ref(3)
@@ -344,6 +346,7 @@ async function gerarAtividades() {
 
   const aluno = alunos.value.find(a => a.id === aluno_id.value)
   alunoNome.value = aluno?.nome ?? ''
+  alunoId.value = aluno?.id ?? ''
   alunoAvatarId.value = aluno?.avatar_id ?? null
 
   try {
