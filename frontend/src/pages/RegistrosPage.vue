@@ -57,12 +57,20 @@
       class="cursor-pointer-rows"
       @row-click="abrirCard($event.data)"
     >
-      <Column v-if="modoFiltro === 'todos'" header="" style="width:52px;padding:0.3rem">
-        <template #body="{ index }">
-          <img :src="getKidImage(index)" class="reg-avatar" alt="avatar" />
+      <Column v-if="modoFiltro === 'todos'" field="aluno_nome" header="Aluno" sortable>
+        <template #body="{ data }">
+          <div class="reg-nome-cell">
+            <img
+              v-if="getAvatarSrc(data.aluno_avatar_id)"
+              :src="getAvatarSrc(data.aluno_avatar_id)!"
+              class="reg-avatar"
+              alt="avatar"
+            />
+            <AvatarInitials v-else :nome="data.aluno_nome" :seed="data.aluno_id ?? data.aluno_nome" :size="36" />
+            <span>{{ data.aluno_nome }}</span>
+          </div>
         </template>
       </Column>
-      <Column v-if="modoFiltro === 'todos'" field="aluno_nome" header="Aluno" sortable />
       <Column v-if="modoFiltro === 'todos'" field="turma_nome" header="Turma" sortable />
       <Column field="periodo" header="Período" sortable>
         <template #body="{ data }">
@@ -79,10 +87,12 @@
           {{ formatarData(data.created_at) }}
         </template>
       </Column>
-      <Column header="Ações" style="width:90px">
+      <Column header="Ações" style="width:110px">
         <template #body="{ data }">
-          <Button icon="pi pi-pencil" text rounded @click.stop="abrirDialogEditar(data.id)" />
-          <Button icon="pi pi-trash" text rounded severity="danger" @click.stop="confirmarExcluir(data)" />
+          <div class="acoes-cell">
+            <Button icon="pi pi-pencil" v-tooltip.top="'Editar'" text rounded @click.stop="abrirDialogEditar(data.id)" />
+            <Button icon="pi pi-trash" v-tooltip.top="'Excluir'" text rounded severity="danger" @click.stop="confirmarExcluir(data)" />
+          </div>
         </template>
       </Column>
     </DataTable>
@@ -220,10 +230,11 @@
       </div>
 
       <template #footer>
-        <Button label="Cancelar" text :disabled="salvando" @click="dialogVisible = false" />
+        <Button label="Cancelar" severity="info" :disabled="salvando" @click="dialogVisible = false" />
         <Button
           :label="editandoId ? 'Salvar Alterações' : 'Criar Registro'"
           icon="pi pi-check"
+          severity="success"
           :loading="salvando"
           :disabled="!formValido || loadingForm"
           @click="salvar"
@@ -249,6 +260,8 @@ import { useConfirm } from 'primevue/useconfirm'
 import BnccSelector from '@/components/BnccSelector.vue'
 import api from '@/services/api'
 import { usePageLayout } from '@/composables/usePageLayout'
+import { getAvatarSrc } from '@/composables/useAvatars'
+import AvatarInitials from '@/components/AvatarInitials.vue'
 
 interface Turma { id: string; nome: string }
 interface Aluno  { id: string; nome: string }
@@ -258,7 +271,9 @@ interface Registro {
   bncc_refs: string[]
   created_at: string
   updated_at: string
+  aluno_id?: string
   aluno_nome?: string
+  aluno_avatar_id?: number | null
   turma_nome?: string
 }
 interface RegistroFull extends Registro {
@@ -273,13 +288,7 @@ interface RegistroFull extends Registro {
 
 usePageLayout({ title: 'Registros Pedagógicos', subtitle: 'Registre as atividades semanais dos alunos' })
 
-// ── Kid avatars ──
-const kidModules = import.meta.glob('@/assets/drawings/kid*.png', { eager: true })
-const kidImages: string[] = Object.values(kidModules).map((m: any) => m.default)
-function getKidImage(index: number) {
-  if (kidImages.length === 0) return ''
-  return kidImages[Math.abs(index) % kidImages.length]
-}
+
 
 const toast   = useToast()
 const confirm = useConfirm()
@@ -528,6 +537,7 @@ function confirmarExcluir(registro: Registro) {
     acceptLabel: 'Excluir',
     rejectLabel: 'Cancelar',
     acceptClass: 'p-button-danger',
+    rejectClass: 'p-button-info',
     accept: () => excluir(registro.id),
   })
 }
@@ -609,7 +619,40 @@ onMounted(async () => {
   border-radius: 50%;
   object-fit: cover;
   border: 2px solid var(--acae-primary);
+  box-shadow: 0 2px 8px var(--acae-primary-dim);
   display: block;
+  flex-shrink: 0;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+:deep(tr:hover .reg-avatar) {
+  transform: scale(1.13);
+  box-shadow: 0 4px 14px var(--acae-primary-dim);
+}
+:deep(tr:hover .avatar-initials-circle) {
+  transform: scale(1.13);
+  box-shadow: 0 3px 10px rgba(0,0,0,0.18);
+}
+.reg-avatar-anon {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  background: var(--surface-100, #f3f4f6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--text-3);
+  font-size: 1rem;
+}
+.reg-nome-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.acoes-cell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .loading-form {

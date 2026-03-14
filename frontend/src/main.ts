@@ -3,6 +3,7 @@ import { createPinia } from 'pinia'
 import PrimeVue from 'primevue/config'
 import ConfirmationService from 'primevue/confirmationservice'
 import ToastService from 'primevue/toastservice'
+import Tooltip from 'primevue/tooltip'
 import 'primeicons/primeicons.css'
 
 import { AcaePreset } from '@/theme/acae-preset'
@@ -26,6 +27,7 @@ app.use(PrimeVue, {
 })
 app.use(ConfirmationService)
 app.use(ToastService)
+app.directive('tooltip', Tooltip)
 // NOTE: router is intentionally NOT installed here.
 // Vue Router fires its initial navigation inside app.use(router),
 // which would run beforeEach guards before auth is initialized.

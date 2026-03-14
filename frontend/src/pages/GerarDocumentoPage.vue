@@ -33,7 +33,7 @@
           <div class="field" v-if="precisaDeDatas">
             <label>
               Período Início
-              <span class="label-badge">{{ labelDias(form.periodo_inicio) }}</span>
+              <Tag v-if="labelDias(form.periodo_inicio)" :value="labelDias(form.periodo_inicio)" severity="warn" />
             </label>
             <DatePicker
               v-model="form.periodo_inicio"
@@ -48,7 +48,7 @@
           <div class="field" v-if="precisaDeDatas">
             <label>
               Período Fim
-              <span class="label-badge">{{ labelDias(form.periodo_fim) }}</span>
+              <Tag v-if="labelDias(form.periodo_fim)" :value="labelDias(form.periodo_fim)" severity="warn" />
             </label>
             <DatePicker
               v-model="form.periodo_fim"
@@ -74,6 +74,7 @@
             icon="pi pi-sparkles"
             :loading="estaGerando"
             :disabled="!formularioValido"
+            class="btn-gerar-azul"
             @click="gerarDocumento"
             fluid
           />
@@ -81,13 +82,41 @@
 
         <!-- Histórico de relatórios (apenas para relatorio_individual) -->
         <div class="historico-section" v-if="form.tipo === 'relatorio_individual' && form.aluno_id">
-          <HistoricoRelatorios :aluno-id="form.aluno_id" />
+          <HistoricoRelatorios
+            :aluno-id="form.aluno_id"
+            :aluno-avatar-id="alunoSelecionado?.avatar_id ?? null"
+            :aluno-nome="alunoSelecionado?.nome ?? ''"
+          />
         </div>
       </div>
 
-      <!-- Rascunho -->
-      <div class="col-12 lg:col-7" v-if="rascunho">
-        <div class="rascunho-card sticky top-4">
+      <!-- Rascunho / Empty state -->
+      <div class="col-12 lg:col-7">
+        <!-- Empty state when no document generated yet -->
+        <div v-if="!rascunho && !estaGerando" class="empty-state-card sticky top-4">
+          <i class="pi pi-file-edit empty-state-icon" />
+          <h3 class="empty-state-title">Nenhum documento gerado ainda</h3>
+          <p class="empty-state-desc">
+            Preencha o formulário ao lado e clique em
+            <strong>Gerar Documento</strong> para criar um rascunho com IA.
+          </p>
+          <ul class="empty-state-tips">
+            <li><i class="pi pi-check-circle" /> Selecione o tipo de documento</li>
+            <li><i class="pi pi-check-circle" /> Escolha o aluno</li>
+            <li><i class="pi pi-check-circle" /> Defina o período</li>
+            <li><i class="pi pi-check-circle" /> Vincule competências BNCC</li>
+          </ul>
+        </div>
+
+        <!-- Loading state -->
+        <div v-if="estaGerando" class="empty-state-card sticky top-4 loading-state">
+          <i class="pi pi-spin pi-spinner empty-state-icon" style="color: var(--acae-blue)" />
+          <h3 class="empty-state-title">Gerando documento com IA...</h3>
+          <p class="empty-state-desc">Aguarde enquanto a inteligência artificial cria seu documento personalizado.</p>
+        </div>
+
+        <!-- Rascunho when generated -->
+        <div v-if="rascunho" class="rascunho-card sticky top-4">
           <div class="rascunho-header">
             <h3>Rascunho Gerado</h3>
             <Tag :value="rascunho.status" />
@@ -132,7 +161,7 @@ import HistoricoRelatorios from '@/components/HistoricoRelatorios.vue'
 import api from '@/services/api'
 import { usePageLayout } from '@/composables/usePageLayout'
 
-interface Aluno { id: string; nome: string; turma_id: string; turma_nome: string }
+interface Aluno { id: string; nome: string; turma_id: string; turma_nome: string; avatar_id?: number | null }
 interface Rascunho { id: string; status: string; conteudo_gerado: string; conteudo_editado?: string }
 
 const confirm = useConfirm()
@@ -164,6 +193,8 @@ const loadingAlunos = ref(false)
 const rascunho = ref<Rascunho | null>(null)
 const estaGerando = ref(false)
 const erroGeracao = ref('')
+
+const alunoSelecionado = computed(() => alunos.value.find(a => a.id === form.value.aluno_id) ?? null)
 
 const precisaDeDatas = computed(() => form.value.tipo !== 'resumo_pedagogico' && form.value.tipo !== 'atividade_adaptada')
 
@@ -374,13 +405,15 @@ async function finalizar() {
   align-items: center;
   gap: 0.5rem;
 }
-.label-badge {
-  font-size: 0.75rem;
-  font-weight: 400;
-  color: var(--acae-primary);
-  background: var(--acae-primary-dim);
-  padding: 0.1rem 0.4rem;
-  border-radius: 999px;
+:deep(.btn-gerar-azul.p-button) {
+  background: linear-gradient(135deg, var(--acae-blue) 0%, #2d6bc4 100%) !important;
+  border-color: #2d6bc4 !important;
+  color: #fff !important;
+  font-weight: 700;
+}
+:deep(.btn-gerar-azul.p-button:hover:not(:disabled)) {
+  background: linear-gradient(135deg, #3d84d8 0%, #2460b5 100%) !important;
+  border-color: #2460b5 !important;
 }
 .rascunho-header {
   display: flex;
@@ -404,4 +437,56 @@ async function finalizar() {
   .lg\:col-5 { flex: 0 0 calc(41.6667% - 0.75rem); }
   .lg\:col-7 { flex: 0 0 calc(58.3333% - 0.75rem); }
 }
+
+/* ── Empty state ── */
+.empty-state-card {
+  background: var(--bg-card);
+  border: 2px dashed var(--border);
+  border-radius: 10px;
+  padding: 3rem 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 1rem;
+  min-height: 340px;
+  justify-content: center;
+}
+.loading-state { border-style: solid; border-color: var(--acae-blue); }
+.empty-state-icon {
+  font-size: 3.5rem;
+  color: var(--text-3);
+  opacity: 0.6;
+}
+.empty-state-title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-2);
+  font-family: 'Nunito', sans-serif;
+}
+.empty-state-desc {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--text-3);
+  max-width: 360px;
+  line-height: 1.5;
+}
+.empty-state-tips {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  text-align: left;
+}
+.empty-state-tips li {
+  font-size: 0.8rem;
+  color: var(--text-3);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.empty-state-tips li i { color: var(--acae-primary); font-size: 0.8rem; }
 </style>

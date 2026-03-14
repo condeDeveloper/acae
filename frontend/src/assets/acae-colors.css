@@ -24,8 +24,8 @@
   --bg-active:   rgba(255, 204, 2, 0.15);
 
   /* === Borders === */
-  --border:       rgba(0, 0, 0, 0.08);
-  --border-hover: rgba(0, 0, 0, 0.16);
+  --border:       #C8D0DA;
+  --border-hover: #A0AABA;
 
   /* === Text === */
   --text-1: #1C2B3A;

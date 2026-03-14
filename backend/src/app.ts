@@ -22,6 +22,8 @@ import authRoutes from './routes/auth/index.js'
 import documentsRoutes from './routes/documents/index.js'
 import downloadsRoutes from './routes/downloads/index.js'
 import atividadesRoutes from './routes/atividades/index.js'
+import chamadasRoutes from './routes/chamadas/index.js'
+import ocorrenciasRoutes from './routes/ocorrencias/index.js'
 
 const fastify = Fastify({
   logger: {
@@ -56,6 +58,8 @@ async function build() {
   await fastify.register(documentsRoutes)
   await fastify.register(downloadsRoutes)
   await fastify.register(atividadesRoutes)
+  await fastify.register(chamadasRoutes)
+  await fastify.register(ocorrenciasRoutes)
 
   // Health check (sem auth)
   fastify.get('/health', async () => ({ status: 'ok', timestamp: new Date().toISOString() }))

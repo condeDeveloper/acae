@@ -21,7 +21,7 @@ export default async function registrosRoutes(fastify: FastifyInstance) {
           bncc_refs: true,
           created_at: true,
           updated_at: true,
-          aluno: { select: { id: true, nome: true, data_nascimento: true } },
+          aluno: { select: { id: true, nome: true, data_nascimento: true, avatar_id: true } },
           turma: { select: { id: true, nome: true } },
         },
       })
@@ -36,6 +36,7 @@ export default async function registrosRoutes(fastify: FastifyInstance) {
           aluno_id: r.aluno.id,
           aluno_nome: r.aluno.nome,
           aluno_data_nascimento: r.aluno.data_nascimento,
+          aluno_avatar_id: r.aluno.avatar_id,
           turma_id: r.turma.id,
           turma_nome: r.turma.nome,
         })),

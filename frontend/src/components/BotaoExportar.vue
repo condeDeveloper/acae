@@ -1,16 +1,23 @@
 <template>
-  <div class="botao-exportar">
+  <div :class="['botao-exportar', compacto ? 'botao-exportar--compacto' : '']">
     <Button
-      label=".docx"
+      :label="compacto ? undefined : '.docx'"
       icon="pi pi-file-word"
-      severity="secondary"
+      :severity="compacto ? undefined : 'secondary'"
+      :text="compacto"
+      :rounded="compacto"
+      :v-tooltip="compacto ? '.docx' : undefined"
+      :class="compacto ? 'btn-download-azul' : ''"
       :loading="loadingDocx"
       @click="exportar('docx')"
     />
     <Button
-      label=".pdf"
+      :label="compacto ? undefined : '.pdf'"
       icon="pi pi-file-pdf"
-      severity="secondary"
+      :severity="compacto ? undefined : 'secondary'"
+      :text="compacto"
+      :rounded="compacto"
+      :class="compacto ? 'btn-download-azul' : ''"
       :loading="loadingPdf"
       @click="exportar('pdf')"
     />
@@ -23,7 +30,7 @@ import Button from 'primevue/button'
 import { useToast } from 'primevue/usetoast'
 import api from '@/services/api'
 
-const props = defineProps<{ rascunhoId: string }>()
+const props = defineProps<{ rascunhoId: string; compacto?: boolean }>()
 const toast = useToast()
 
 const loadingDocx = ref(false)
@@ -50,5 +57,16 @@ async function exportar(formato: 'docx' | 'pdf') {
 .botao-exportar {
   display: flex;
   gap: 0.5rem;
+}
+.botao-exportar--compacto {
+  gap: 0.25rem;
+  justify-content: center;
+}
+:deep(.btn-download-azul.p-button) {
+  color: var(--acae-blue) !important;
+}
+:deep(.btn-download-azul.p-button:hover) {
+  background: var(--acae-blue-dim) !important;
+  color: var(--acae-blue) !important;
 }
 </style>

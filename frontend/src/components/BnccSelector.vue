@@ -12,6 +12,8 @@
     filter
     filterPlaceholder="Buscar competência"
     fluid
+    :maxSelectedLabels="999"
+    scrollHeight="320px"
     @update:modelValue="$emit('update:modelValue', $event)"
   />
 </template>
@@ -62,3 +64,25 @@ onMounted(async () => {
   }
 })
 </script>
+
+<style scoped>
+/* Allow the chip area to grow vertically when many chips are selected */
+:deep(.p-multiselect-label) {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 4px !important;
+  height: auto !important;
+  max-height: none !important;
+  padding: 0.375rem !important;
+  white-space: normal !important;
+  overflow: visible !important;
+}
+:deep(.p-multiselect) {
+  height: auto !important;
+  min-height: 2.5rem;
+}
+:deep(.p-multiselect-label-container) {
+  height: auto !important;
+  overflow: visible !important;
+}
+</style>
