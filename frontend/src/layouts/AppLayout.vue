@@ -25,6 +25,11 @@
     </div>
 
     <main class="main-content">
+      <Transition name="page-overlay">
+        <div v-if="isPageLoading" class="page-loading-overlay">
+          <div class="page-loading-bar" />
+        </div>
+      </Transition>
       <RouterView />
     </main>
     <Toast position="bottom-right" />
@@ -38,13 +43,19 @@ import ConfirmDialog from 'primevue/confirmdialog'
 import AppSidebar from '@/components/AppSidebar.vue'
 import { useInactivityTimer } from '@/composables/useInactivityTimer'
 import { providePageLayout } from '@/composables/usePageLayout'
-import { onMounted, onUnmounted } from 'vue'
+import { usePageLoading } from '@/composables/usePageLoading'
+import { onMounted, onUnmounted, watch } from 'vue'
+import { useRoute } from 'vue-router'
 
 const { start, stop } = useInactivityTimer()
 onMounted(start)
 onUnmounted(stop)
 
 const pageLayout = providePageLayout()
+
+const { isPageLoading, beginNav } = usePageLoading()
+const route = useRoute()
+watch(() => route.path, () => beginNav(), { immediate: true })
 
 const navItems = [
   { to: '/turmas',           label: 'Turmas',    icon: 'pi pi-users' },
@@ -74,19 +85,19 @@ const navItems = [
   z-index: 150;
   display: flex;
   align-items: center;
-  min-height: 64px;
+  height: 72px;
   background: var(--bg-surface);
   border-bottom: 3px solid var(--acae-primary);
-  padding: 0.5rem 1.5rem 0;
+  padding: 0 1.5rem;
   flex-shrink: 0;
   box-shadow: 0 2px 12px rgba(0,0,0,0.06);
   overflow: visible;
 }
 
 .content-header__left {
-  flex: 0 0 auto;
-  min-width: 200px;
-  padding-bottom: 0.5rem;
+  flex: 0 0 220px;
+  width: 220px;
+  overflow: hidden;
 }
 .ch-title {
   margin: 0;
@@ -96,6 +107,9 @@ const navItems = [
   letter-spacing: -0.02em;
   font-family: 'Nunito', sans-serif;
   line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .ch-subtitle {
   margin: 0.1rem 0 0;
@@ -176,12 +190,11 @@ const navItems = [
 
 /* ── Right action slot ── */
 .content-header__right {
-  flex: 0 0 auto;
-  min-width: 200px;
+  flex: 0 0 220px;
+  width: 220px;
   display: flex;
   justify-content: flex-end;
   align-items: center;
-  padding-bottom: 0.5rem;
 }
 
 .main-content {
@@ -190,6 +203,47 @@ const navItems = [
   overflow-y: auto;
   min-width: 0;
   font-family: 'Nunito', sans-serif;
+  position: relative;
+}
+
+/* ── Page loading overlay ── */
+.page-loading-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 100;
+  background: var(--bg-base);
+  pointer-events: none;
+}
+
+.page-loading-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  overflow: hidden;
+}
+
+.page-loading-bar::after {
+  content: '';
+  display: block;
+  height: 100%;
+  width: 45%;
+  background: linear-gradient(90deg, transparent, var(--acae-primary), transparent);
+  border-radius: 99px;
+  animation: page-bar-slide 1.2s ease-in-out infinite;
+}
+
+@keyframes page-bar-slide {
+  0%   { transform: translateX(-200%); }
+  100% { transform: translateX(500%); }
+}
+
+.page-overlay-leave-active {
+  transition: opacity 0.22s ease;
+}
+.page-overlay-leave-to {
+  opacity: 0;
 }
 </style>
 

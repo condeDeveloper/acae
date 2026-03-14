@@ -141,6 +141,7 @@ import { useToast } from 'primevue/usetoast'
 import { useAuthStore } from '@/stores/auth'
 import api from '@/services/api'
 import { usePageLayout } from '@/composables/usePageLayout'
+import { usePageLoading } from '@/composables/usePageLoading'
 import { getAvatarSrc } from '@/composables/useAvatars'
 import AvatarInitials from '@/components/AvatarInitials.vue'
 
@@ -161,6 +162,7 @@ const toast = useToast()
 const authStore = useAuthStore()
 
 usePageLayout({ title: 'Turmas', subtitle: 'Gerencie suas turmas do ano letivo' })
+const { trackLoad } = usePageLoading()
 
 const turmas = ref<Turma[]>([])
 const loading = ref(false)
@@ -252,7 +254,7 @@ async function salvar() {
   }
 }
 
-onMounted(carregar)
+onMounted(() => trackLoad(carregar()))
 </script>
 
 <style scoped>
@@ -326,7 +328,7 @@ onMounted(carregar)
   color: var(--text-1);
 }
 .alunos-stack-cell--zero {
-  justify-content: center;
+  justify-content: flex-start;
 }
 :deep(tr:hover .avatar-initials-circle) {
   transform: scale(1.15);
