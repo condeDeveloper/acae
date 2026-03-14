@@ -29,7 +29,7 @@
       <Column field="total_alunos" header="Alunos" sortable style="width:90px;text-align:center" />
       <Column header="Ações" style="width:90px">
         <template #body="{ data }">
-          <Button icon="pi pi-pencil" text rounded @click.stop="abrirDialogEditar(data)" />
+          <Button icon="pi pi-pencil" v-tooltip.top="'Editar'" text rounded @click.stop="abrirDialogEditar(data)" />
         </template>
       </Column>
     </DataTable>

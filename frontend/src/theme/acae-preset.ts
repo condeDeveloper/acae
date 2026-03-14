@@ -20,7 +20,7 @@ export const AcaePreset = definePreset(Aura, {
       light: {
         surface: {
           0:   '#ffffff',
-          50:  '#F0F4F8',
+          50:  '#E4E9F0',
           100: '#E8EDF4',
           200: '#D8E2EC',
           300: '#C0CDD9',

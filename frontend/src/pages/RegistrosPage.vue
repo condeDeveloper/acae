@@ -57,12 +57,14 @@
       class="cursor-pointer-rows"
       @row-click="abrirCard($event.data)"
     >
-      <Column v-if="modoFiltro === 'todos'" header="" style="width:52px;padding:0.3rem">
-        <template #body="{ index }">
-          <img :src="getKidImage(index)" class="reg-avatar" alt="avatar" />
+      <Column v-if="modoFiltro === 'todos'" field="aluno_nome" header="Aluno" sortable>
+        <template #body="{ data, index }">
+          <div class="reg-nome-cell">
+            <img :src="getKidImage(index)" class="reg-avatar" alt="avatar" />
+            <span>{{ data.aluno_nome }}</span>
+          </div>
         </template>
       </Column>
-      <Column v-if="modoFiltro === 'todos'" field="aluno_nome" header="Aluno" sortable />
       <Column v-if="modoFiltro === 'todos'" field="turma_nome" header="Turma" sortable />
       <Column field="periodo" header="Período" sortable>
         <template #body="{ data }">
@@ -79,10 +81,12 @@
           {{ formatarData(data.created_at) }}
         </template>
       </Column>
-      <Column header="Ações" style="width:90px">
+      <Column header="Ações" style="width:110px">
         <template #body="{ data }">
-          <Button icon="pi pi-pencil" text rounded @click.stop="abrirDialogEditar(data.id)" />
-          <Button icon="pi pi-trash" text rounded severity="danger" @click.stop="confirmarExcluir(data)" />
+          <div class="acoes-cell">
+            <Button icon="pi pi-pencil" v-tooltip.top="'Editar'" text rounded @click.stop="abrirDialogEditar(data.id)" />
+            <Button icon="pi pi-trash" v-tooltip.top="'Excluir'" text rounded severity="danger" @click.stop="confirmarExcluir(data)" />
+          </div>
         </template>
       </Column>
     </DataTable>
@@ -609,7 +613,20 @@ onMounted(async () => {
   border-radius: 50%;
   object-fit: cover;
   border: 2px solid var(--acae-primary);
+  box-shadow: 0 2px 8px var(--acae-primary-dim);
   display: block;
+  flex-shrink: 0;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+.reg-nome-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.acoes-cell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .loading-form {

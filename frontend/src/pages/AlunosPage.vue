@@ -43,12 +43,14 @@
       class="cursor-pointer-rows"
       @row-click="abrirCard($event.data)"
     >
-      <Column header="" style="width:60px">
-        <template #body="{ index }">
-          <img :src="getKidImage(index)" class="aluno-avatar" alt="avatar" />
+      <Column field="nome" header="Nome" sortable>
+        <template #body="{ data, index }">
+          <div class="aluno-nome-cell">
+            <img :src="getKidImage(index)" class="aluno-avatar" alt="avatar" />
+            <span>{{ data.nome }}</span>
+          </div>
         </template>
       </Column>
-      <Column field="nome" header="Nome" sortable />
       <Column field="turma_nome" header="Turma" sortable />
       <Column field="data_nascimento" header="Nascimento">
         <template #body="{ data }">
@@ -60,10 +62,12 @@
           {{ data.necessidades_educacionais || '—' }}
         </template>
       </Column>
-      <Column header="Ações" style="width:90px">
+      <Column header="Ações" style="width:110px">
         <template #body="{ data }">
-          <Button icon="pi pi-pencil" text rounded @click.stop="abrirDialogEditar(data)" />
-          <Button icon="pi pi-trash" text rounded severity="danger" @click.stop="confirmarExcluir(data)" />
+          <div class="acoes-cell">
+            <Button icon="pi pi-pencil" v-tooltip.top="'Editar'" text rounded @click.stop="abrirDialogEditar(data)" />
+            <Button icon="pi pi-trash" v-tooltip.top="'Excluir'" text rounded severity="danger" @click.stop="confirmarExcluir(data)" />
+          </div>
         </template>
       </Column>
     </DataTable>
@@ -374,15 +378,26 @@ onMounted(async () => {
 }
 .sw-track--on .sw-knob { transform: translateX(20px); }
 
-/* ── Avatar na tabela ── */
+/* ── Avatar na tabela (foto + nome juntos) ── */
+.aluno-nome-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
 .aluno-avatar {
-  width: 40px;
-  height: 40px;
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
   object-fit: cover;
   border: 2.5px solid var(--acae-primary);
   box-shadow: 0 2px 8px var(--acae-primary-dim);
-  display: block;
+  flex-shrink: 0;
+}
+/* ── Botões de ação lado a lado ── */
+.acoes-cell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 /* ── Card detalhe avatar ── */

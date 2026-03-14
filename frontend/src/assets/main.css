@@ -20,6 +20,11 @@ body {
 ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 6px; }
 ::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.25); }
 
+/* ── PrimeVue: override striped row CSS variable diretamente ── */
+:root {
+  --p-datatable-row-striped-background: #D8E1EC;
+}
+
 /* ── Page scaffold ── */
 .page-container {
   display: flex;
@@ -77,13 +82,52 @@ body {
 
 .p-datatable .p-datatable-header,
 .p-datatable .p-datatable-thead > tr > th {
-  background: #FAFBFC !important;
-  color: var(--text-2) !important;
-  border-color: var(--border) !important;
+  background: #FFE066 !important;
+  color: #3A3000 !important;
+  border-color: #E8C800 !important;
   font-size: 0.75rem;
   font-weight: 800;
   letter-spacing: 0.05em;
   text-transform: uppercase;
+}
+
+/* Tags de turno: cores sólidas pastéis para garantir legibilidade em qualquer linha colorida */
+.p-datatable {
+  --acae-blue-dim:     #D4E8FC;
+  --acae-green-dim:    #C4F0DC;
+  --acae-primary-dim:  #FFF3B0;
+  --acae-red-dim:      #FADADA;
+}
+.p-datatable .p-tag {
+  filter: drop-shadow(0 1px 4px rgba(0, 0, 0, 0.28));
+  font-weight: 700;
+  transition: transform 0.18s ease, filter 0.18s ease;
+}
+.p-datatable .p-datatable-tbody > tr:hover .p-tag {
+  transform: scale(1.12);
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.50));
+}
+
+/* Foto do aluno escala no hover da linha */
+.p-datatable .p-datatable-tbody > tr:hover .aluno-avatar,
+.p-datatable .p-datatable-tbody > tr:hover .reg-avatar {
+  transform: scale(1.18);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.30);
+}
+
+/* Botão editar: fundo branco translúcido (restaurado) + escala no hover */
+.p-datatable .p-button.p-button-text.p-button-rounded {
+  background: rgba(255, 255, 255, 0.6) !important;
+  border: 1.5px solid rgba(0, 0, 0, 0.15) !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18) !important;
+  color: #3A4A5E !important;
+  transition: transform 0.18s ease, filter 0.18s ease, background 0.18s ease !important;
+}
+.p-datatable .p-button.p-button-text.p-button-rounded:hover {
+  transform: scale(1.28) !important;
+  background: rgba(255, 255, 255, 0.95) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.28) !important;
+  color: #1C2B3A !important;
 }
 
 .p-datatable table {
@@ -92,20 +136,20 @@ body {
 }
 
 .p-datatable .p-datatable-tbody > tr {
-  background: var(--bg-card) !important;
+  background: var(--bg-card);
   color: var(--text-1) !important;
   border-color: var(--border) !important;
-  transition: background 0.15s !important;
+  transition: filter 0.18s ease, background 0.15s !important;
   cursor: default;
 }
 
-.p-datatable .p-datatable-tbody > tr:hover,
-.p-datatable-striped .p-datatable-tbody > tr:nth-child(even):hover {
-  background: rgba(255, 204, 2, 0.12) !important;
+.p-datatable .p-datatable-tbody > tr:hover {
+  filter: brightness(0.88) saturate(1.15) !important;
+  cursor: pointer;
 }
 
 .p-datatable .p-datatable-tbody > tr:active {
-  background: rgba(255, 204, 2, 0.28) !important;
+  filter: brightness(0.78) saturate(1.25) !important;
 }
 .p-datatable .p-datatable-tbody > tr:focus,
 .p-datatable .p-datatable-tbody > tr.p-highlight {
@@ -113,9 +157,18 @@ body {
   outline: none !important;
 }
 
-/* Striped rows */
-.p-datatable-striped .p-datatable-tbody > tr:nth-child(even) {
-  background: #F7F8FA !important;
+/* Striped rows — ciclo: branco, azul, branco, vermelho, branco, verde */
+.p-datatable.p-datatable-striped .p-datatable-tbody > tr.p-row-odd {
+  background: #FFFFFF !important;
+}
+.p-datatable.p-datatable-striped .p-datatable-tbody > tr:nth-child(6n+2) {
+  background: #C8D9F0 !important;
+}
+.p-datatable.p-datatable-striped .p-datatable-tbody > tr:nth-child(6n+4) {
+  background: #F5C8C8 !important;
+}
+.p-datatable.p-datatable-striped .p-datatable-tbody > tr:nth-child(6n+6) {
+  background: #C8EAD5 !important;
 }
 
 /* ── Dialogs light ── */
@@ -200,14 +253,25 @@ body {
   transform: translateY(0) !important;
   box-shadow: 0 2px 8px var(--acae-primary-dim) !important;
 }
-.p-button.p-button-danger {
+/* Danger botões sólidos (ex: confirmação) */
+.p-button.p-button-danger:not(.p-button-text) {
   background: var(--acae-red) !important;
   color: #fff !important;
   box-shadow: 0 4px 14px var(--acae-red-dim) !important;
 }
-.p-button.p-button-danger:hover {
+.p-button.p-button-danger:not(.p-button-text):hover {
   background: #D94B4B !important;
   box-shadow: 0 6px 20px var(--acae-red-dim) !important;
+}
+/* Danger texto/ícone (ex: lixeira na tabela) — fundo vermelho sólido + ícone branco */
+.p-button.p-button-text.p-button-danger,
+.p-datatable .p-button.p-button-text.p-button-rounded.p-button-danger {
+  background: var(--acae-red) !important;
+  color: #fff !important;
+  border-color: transparent !important;
+}
+.p-datatable .p-button.p-button-text.p-button-rounded.p-button-danger:hover {
+  background: #D94B4B !important;
 }
 
 /* ── Paginator light ── */
