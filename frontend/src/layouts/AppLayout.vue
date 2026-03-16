@@ -66,6 +66,7 @@ const navItems = [
   { to: '/chamada',          label: 'Chamada',   icon: 'pi pi-calendar-clock' },
   { to: '/atividades',       label: 'Atividades', icon: 'pi pi-th-large' },
   { to: '/ocorrencias',      label: 'Ocorrências', icon: 'pi pi-megaphone' },
+  { to: '/vineland',         label: 'Vineland',  icon: 'pi pi-chart-bar' },
   { to: '/perfil',           label: 'Perfil',    icon: 'pi pi-cog' },
 ]
 </script>
