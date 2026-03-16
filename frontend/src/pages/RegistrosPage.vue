@@ -494,7 +494,7 @@ async function abrirDialogEditar(id: string) {
 
 async function salvar() {
   if (!formValido.value) return
-  if (!editandoId.value && !aluno_id.value) return
+  if (!editandoId.value && !form.value.aluno_id && !aluno_id.value) return
   salvando.value  = true
   erroDialog.value = ''
 

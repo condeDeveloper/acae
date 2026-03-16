@@ -10,6 +10,17 @@ import {
   buildPromptResumo,
 } from './prompt-builder.js'
 
+// Helper: fetch BNCC descriptions for a list of codes from DB
+async function fetchBnccDescricoes(codes: string[]): Promise<Record<string, string>> {
+  if (codes.length === 0) return {}
+  const unique = Array.from(new Set(codes))
+  const records = await prisma.competenciaBNCC.findMany({
+    where: { codigo: { in: unique } },
+    select: { codigo: true, descricao: true },
+  })
+  return Object.fromEntries(records.map(b => [b.codigo, b.descricao]))
+}
+
 interface Professor {
   id: string
   nome: string
@@ -98,27 +109,34 @@ export async function gerarDocumento(params: GenerateParams) {
       orderBy: { updated_at: 'desc' },
     })
 
-    const descricaoContexto = contexto
-      ? `${contexto.objetivos}\n\n${contexto.metodologia}${contexto.dinamica_grupo ? '\n\n' + contexto.dinamica_grupo : ''}`
-      : undefined
+    // Fetch BNCC descriptions for all codes present in the registros
+    const allCodes = Array.from(new Set(registros.flatMap(r => r.bncc_refs as string[])))
+    const bnccDescricoes = await fetchBnccDescricoes(allCodes)
 
     pseudo = pseudonymize()
     const registrosMapped = registros.map((r) => ({
       periodo: toBR(r.periodo),
       atividades: r.atividades ?? '',
       objetivos: r.objetivos ?? '',
-      medicoes: r.mediacoes ?? '',
-      ocorrencias: r.ocorrencias ?? '',
+      mediacoes: r.mediacoes ?? '',    // mediação pedagógica por aluno/grupo
+      ocorrencias: r.ocorrencias ?? '', // fatos fora da rotina / justificativas
       bncc_refs: r.bncc_refs as string[],
     }))
 
     if (tipo === 'portfolio_semanal' || tipo === 'portfolio_mensal') {
       prompt = buildPromptPortfolio({
         pseudo,
+        tipo,
         registros: registrosMapped,
-        contexto: descricaoContexto,
+        bnccDescricoes,
+        metodologiaTurma: contexto?.metodologia ?? undefined,
+        dinamicaGrupo: contexto?.dinamica_grupo ?? undefined,
       })
     } else {
+      // relatorio_individual — build combined context string for narrative
+      const descricaoContexto = contexto
+        ? `${contexto.objetivos}\n\n${contexto.metodologia}${contexto.dinamica_grupo ? '\n\n' + contexto.dinamica_grupo : ''}`
+        : undefined
       const periodoGeral = params.periodo_inicio && params.periodo_fim
         ? `${toBR(params.periodo_inicio)} a ${toBR(params.periodo_fim)}`
         : undefined
@@ -126,6 +144,7 @@ export async function gerarDocumento(params: GenerateParams) {
         pseudo,
         periodoGeral,
         registros: registrosMapped,
+        bnccDescricoes,
         contexto: descricaoContexto,
       })
     }
@@ -145,7 +164,7 @@ export async function gerarDocumento(params: GenerateParams) {
       where: { id: { in: resolvedIds } },
       include: {
         turma: true,
-        registros: { orderBy: { periodo: 'desc' }, take: 3 },
+        registros: { orderBy: { periodo: 'desc' }, take: 3, select: { atividades: true, objetivos: true, bncc_refs: true } },
       },
     })
 
@@ -154,14 +173,25 @@ export async function gerarDocumento(params: GenerateParams) {
     turmaNome = alunos[0]?.turma.nome ?? ''
     turmaId = alunos[0]?.turma_id ?? ''
 
+    // Fetch BNCC descriptions
+    const bnccDescricoes = await fetchBnccDescricoes(params.bncc_refs ?? [])
+
     const pseudo = pseudonymize()
     prompt = buildPromptAtividade({
-      alunos: alunos.map((a) => ({
-        pseudo: `${pseudo}-${a.id.slice(0, 8)}`,
-        contexto: a.necessidades_educacionais ?? 'Sem necessidades específicas registradas',
-      })),
+      alunos: alunos.map((a) => {
+        const historicoRecente = a.registros
+          .map(r => [r.atividades, r.objetivos].filter(Boolean).join(' | '))
+          .filter(Boolean)
+          .join('; ')
+        return {
+          pseudo: `${pseudo}-${a.id.slice(0, 8)}`,
+          necessidades: a.necessidades_educacionais ?? 'Não especificado',
+          historicoRecente: historicoRecente || 'Sem histórico recente registrado',
+        }
+      }),
       objetivo: params.objetivo ?? '',
-      bncc_refs: params.bncc_refs,
+      bncc_refs: params.bncc_refs ?? [],
+      bnccDescricoes,
     })
   } else if (tipo === 'resumo_pedagogico') {
     if (!params.turma_id) throw Object.assign(new Error('turma_id obrigatório'), { statusCode: 400 })
@@ -186,7 +216,13 @@ export async function gerarDocumento(params: GenerateParams) {
           lte: params.periodo_fim,
         },
       },
-      include: { aluno: true },
+      select: {
+        aluno_id: true,
+        atividades: true,
+        objetivos: true,
+        mediacoes: true,
+        bncc_refs: true,
+      },
     })
 
     const alunoUnicoIds = new Set(registros.map((r) => r.aluno_id))
@@ -197,13 +233,33 @@ export async function gerarDocumento(params: GenerateParams) {
       )
     }
 
-    const agregado = `${registros.length} registros de ${alunoUnicoIds.size} alunos no período.`
+    // Fetch BNCC descriptions for all codes in the period
+    const allCodes = Array.from(new Set([
+      ...(params.bncc_refs ?? []),
+      ...registros.flatMap(r => r.bncc_refs as string[]),
+    ]))
+    const bnccDescricoes = await fetchBnccDescricoes(allCodes)
+
+    // Pseudonymize each student consistently across their registros
+    const pseudoMap = new Map<string, string>()
+    const registrosAgregados = registros.map(r => {
+      if (!pseudoMap.has(r.aluno_id)) pseudoMap.set(r.aluno_id, pseudonymize())
+      return {
+        pseudo: pseudoMap.get(r.aluno_id)!,
+        atividades: r.atividades ?? '',
+        objetivos: r.objetivos ?? '',
+        mediacoes: r.mediacoes ?? '',
+        bncc_refs: r.bncc_refs as string[],
+      }
+    })
+
     prompt = buildPromptResumo({
       totalAlunos: alunoUnicoIds.size,
-      periodoInicio: params.periodo_inicio,
-      periodoFim: params.periodo_fim,
-      agregado,
-      bncc_refs: params.bncc_refs,
+      periodoInicio: toBR(params.periodo_inicio),
+      periodoFim: toBR(params.periodo_fim),
+      registrosAgregados,
+      bnccDescricoes,
+      bncc_refs: allCodes,
     })
   } else {
     throw Object.assign(new Error(`Tipo de documento inválido: ${tipo}`), { statusCode: 400 })
