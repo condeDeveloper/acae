@@ -43,12 +43,11 @@
     </div>
 
     <!-- Tabela -->
-    <div class="table-scroll-wrapper">
+    <div>
     <DataTable
       :value="registros"
       :loading="loading"
       stripedRows
-      responsiveLayout="scroll"
       sortField="periodo"
       :sortOrder="-1"
       emptyMessage="Nenhum registro encontrado."
@@ -56,7 +55,6 @@
       :rows="10"
       :rowsPerPageOptions="[10, 25, 50]"
       class="cursor-pointer-rows"
-      style="min-width: 600px"
       @row-click="abrirCard($event.data)"
     >
       <Column v-if="modoFiltro === 'todos'" field="aluno_nome" header="Aluno" sortable>
@@ -73,18 +71,18 @@
           </div>
         </template>
       </Column>
-      <Column v-if="modoFiltro === 'todos'" field="turma_nome" header="Turma" sortable />
+      <Column v-if="modoFiltro === 'todos' && !isMobile" field="turma_nome" header="Turma" sortable />
       <Column field="periodo" header="Período" sortable>
         <template #body="{ data }">
           {{ formatarPeriodo(data.periodo) }}
         </template>
       </Column>
-      <Column header="Competências BNCC">
+      <Column v-if="!isMobile" header="Competências BNCC">
         <template #body="{ data }">
           <span class="bncc-count">{{ data.bncc_refs.length }} competência{{ data.bncc_refs.length !== 1 ? 's' : '' }}</span>
         </template>
       </Column>
-      <Column field="created_at" header="Criado em" sortable>
+      <Column v-if="!isMobile" field="created_at" header="Criado em" sortable>
         <template #body="{ data }">
           {{ formatarData(data.created_at) }}
         </template>
@@ -264,6 +262,7 @@ import BnccSelector from '@/components/BnccSelector.vue'
 import api from '@/services/api'
 import { usePageLayout } from '@/composables/usePageLayout'
 import { usePageLoading } from '@/composables/usePageLoading'
+import { useIsMobile } from '@/composables/useIsMobile'
 import { getAvatarSrc } from '@/composables/useAvatars'
 import AvatarInitials from '@/components/AvatarInitials.vue'
 
@@ -292,6 +291,7 @@ interface RegistroFull extends Registro {
 
 usePageLayout({ title: 'Registros Pedagógicos', subtitle: 'Registre as atividades semanais dos alunos' })
 const { trackLoad } = usePageLoading()
+const { isMobile } = useIsMobile()
 
 
 

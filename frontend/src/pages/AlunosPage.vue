@@ -36,19 +36,17 @@
       <p class="empty-sub">Adicione alunos clicando em "Novo Aluno" ou ajuste o filtro de turma</p>
     </div>
 
-    <div v-else class="table-scroll-wrapper">
+    <div v-else>
     <DataTable
       :value="alunosFiltrados"
       :loading="loading"
       stripedRows
-      responsiveLayout="scroll"
       sortField="turma_nome"
       :sortOrder="1"
       :paginator="alunosFiltrados.length > 10"
       :rows="10"
       :rowsPerPageOptions="[10, 25, 50]"
       class="cursor-pointer-rows"
-      style="min-width: 560px"
       @row-click="abrirCard($event.data)"
     >
       <Column field="nome" header="Nome" sortable>
@@ -61,12 +59,12 @@
         </template>
       </Column>
       <Column field="turma_nome" header="Turma" sortable />
-      <Column field="data_nascimento" header="Nascimento">
+      <Column v-if="!isMobile" field="data_nascimento" header="Nascimento">
         <template #body="{ data }">
           {{ data.data_nascimento ? formatarData(data.data_nascimento) : '—' }}
         </template>
       </Column>
-      <Column field="necessidades_educacionais" header="Necessidades Especiais">
+      <Column v-if="!isMobile" field="necessidades_educacionais" header="Necessidades Especiais">
         <template #body="{ data }">
           {{ data.necessidades_educacionais || '—' }}
         </template>
@@ -182,12 +180,14 @@ import { useConfirm } from 'primevue/useconfirm'
 import api from '@/services/api'
 import { usePageLayout } from '@/composables/usePageLayout'
 import { usePageLoading } from '@/composables/usePageLoading'
+import { useIsMobile } from '@/composables/useIsMobile'
 import { getAvatarSrc } from '@/composables/useAvatars'
 import AvatarSelector from '@/components/AvatarSelector.vue'
 import AvatarInitials from '@/components/AvatarInitials.vue'
 
 usePageLayout({ title: 'Alunos', subtitle: 'Gerencie os alunos das suas turmas' })
 const { trackLoad } = usePageLoading()
+const { isMobile } = useIsMobile()
 
 interface Turma { id: string; nome: string }
 interface Aluno {
@@ -462,12 +462,6 @@ onMounted(() => trackLoad(Promise.all([carregarTurmas(), carregarAlunos()])))
   color: var(--text-3);
 }
 
-/* ── Mobile: scroll horizontal na tabela ── */
-.table-scroll-wrapper {
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  width: 100%;
-}
 @media (max-width: 768px) {
   .filtro-bar { flex-wrap: wrap; gap: 0.5rem; }
 }

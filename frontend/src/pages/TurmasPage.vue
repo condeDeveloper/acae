@@ -11,12 +11,11 @@
       <p class="empty-sub">Clique em "Nova Turma" para começar a organizar seus alunos</p>
     </div>
 
-    <div v-else class="table-scroll-wrapper">
+    <div v-else>
     <DataTable
       :value="turmas"
       :loading="loading"
       stripedRows
-      responsiveLayout="scroll"
       sortField="nome"
       :sortOrder="1"
       :paginator="turmas.length > 10"
@@ -24,18 +23,17 @@
       :rowsPerPageOptions="[10, 25, 50]"
       emptyMessage="Nenhuma turma cadastrada. Clique em 'Nova Turma' para começar."
       class="cursor-pointer-rows"
-      style="min-width: 600px"
       @row-click="abrirCard($event.data)"
     >
-      <Column field="nome" header="Nome da Turma" sortable style="min-width: 140px" />
-      <Column field="ano_letivo" header="Ano Letivo" sortable />
+      <Column field="nome" header="Nome da Turma" sortable />
+      <Column v-if="!isMobile" field="ano_letivo" header="Ano Letivo" sortable />
       <Column field="turno" header="Turno" sortable>
         <template #body="{ data }">
           <Tag :value="turnoLabel(data.turno)" :severity="turnoSeverity(data.turno)" />
         </template>
       </Column>
-      <Column field="escola" header="Escola" sortable />
-      <Column field="total_alunos" header="Alunos" sortable style="width:160px">
+      <Column v-if="!isMobile" field="escola" header="Escola" sortable />
+      <Column v-if="!isMobile" field="total_alunos" header="Alunos" sortable style="width:160px">
         <template #body="{ data }">
           <div :class="['alunos-stack-cell', data.total_alunos === 0 && 'alunos-stack-cell--zero']">
             <div v-if="data.total_alunos > 0" class="alunos-stack">
@@ -144,6 +142,7 @@ import { useAuthStore } from '@/stores/auth'
 import api from '@/services/api'
 import { usePageLayout } from '@/composables/usePageLayout'
 import { usePageLoading } from '@/composables/usePageLoading'
+import { useIsMobile } from '@/composables/useIsMobile'
 import { getAvatarSrc } from '@/composables/useAvatars'
 import AvatarInitials from '@/components/AvatarInitials.vue'
 
@@ -165,6 +164,7 @@ const authStore = useAuthStore()
 
 usePageLayout({ title: 'Turmas', subtitle: 'Gerencie suas turmas do ano letivo' })
 const { trackLoad } = usePageLoading()
+const { isMobile } = useIsMobile()
 
 const turmas = ref<Turma[]>([])
 const loading = ref(false)
@@ -340,12 +340,6 @@ onMounted(() => trackLoad(carregar()))
   transform: scale(1.15);
 }
 
-/* ── Mobile: scroll horizontal na tabela ── */
-.table-scroll-wrapper {
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  width: 100%;
-}
 
 /* ── Empty state ── */
 .empty-state {

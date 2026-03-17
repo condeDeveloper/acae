@@ -1,6 +1,5 @@
 <template>
   <div class="page-container">
-    <div class="table-scroll-wrapper">
     <DataTable
       :value="documentos"
       :loading="loading"
@@ -11,26 +10,24 @@
       :sortOrder="-1"
       emptyMessage="Nenhum documento encontrado"
       class="cursor-pointer-rows"
-      style="min-width: 520px"
       @row-click="abrirDownload($event.data)"
     >
-      <Column field="aluno_nome" header="Aluno" sortable style="width:25%" />
-      <Column field="tipo" header="Tipo" sortable style="width:30%">
+      <Column field="aluno_nome" header="Aluno" sortable />
+      <Column field="tipo" header="Tipo" sortable>
         <template #body="{ data }">{{ tipoLabel(data.tipo) }}</template>
       </Column>
-      <Column field="periodo" header="Período" sortable style="width:25%" />
-      <Column field="finalizado_em" header="Data" sortable style="width:12%">
+      <Column v-if="!isMobile" field="periodo" header="Período" sortable />
+      <Column v-if="!isMobile" field="finalizado_em" header="Data" sortable>
         <template #body="{ data }">
           {{ data.finalizado_em ? new Date(data.finalizado_em).toLocaleDateString('pt-BR') : '—' }}
         </template>
       </Column>
-      <Column header="Download" style="width:8%; text-align: center">
+      <Column header="Download" style="text-align: center">
         <template #body="{ data }">
           <Button icon="pi pi-download" text rounded @click.stop="abrirFormato(data)" />
         </template>
       </Column>
     </DataTable>
-    </div>
 
     <!-- Dialog pequeno: selecionar formato -->
     <Dialog v-model:visible="formatoVisible" header="Selecione o formato" modal :style="{ width: '280px' }">
@@ -65,6 +62,7 @@ import BotaoExportar from '@/components/BotaoExportar.vue'
 import api from '@/services/api'
 import { usePageLayout } from '@/composables/usePageLayout'
 import { usePageLoading } from '@/composables/usePageLoading'
+import { useIsMobile } from '@/composables/useIsMobile'
 
 interface Documento {
   id: string
@@ -80,6 +78,7 @@ interface Documento {
 const documentos = ref<Documento[]>([])
 usePageLayout({ title: 'Histórico de Documentos', subtitle: 'Clique em um documento para baixar' })
 const { trackLoad } = usePageLoading()
+const { isMobile } = useIsMobile()
 const loading = ref(false)
 const downloadVisible = ref(false)
 const selecionado = ref<Documento | null>(null)
@@ -121,7 +120,6 @@ onMounted(() => {
 <style scoped>
 .page-container { padding: 1rem; }
 .page-header { margin-bottom: 1.5rem; }
-.table-scroll-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%; }
 .page-header h2 { margin: 0 0 0.25rem; font-size: 1.75rem; font-weight: 900; font-family: 'Nunito', sans-serif; color: var(--text-1); }
 .page-header p { margin: 0; color: var(--text-2); }
 .doc-info { display: flex; flex-direction: column; gap: 0.875rem; padding: 0.25rem 0; }
