@@ -75,7 +75,8 @@ async function build() {
   fastify.get('/health', async () => ({ status: 'ok', timestamp: new Date().toISOString() }))
 
   // Servir frontend estático (produção)
-  const publicDir = join(__dirname, '..', 'public')
+  // dist/src/app.js → sobe 2 níveis para chegar em backend/public
+  const publicDir = join(__dirname, '../..', 'public')
   if (existsSync(publicDir)) {
     await fastify.register(staticPlugin, {
       root: publicDir,
