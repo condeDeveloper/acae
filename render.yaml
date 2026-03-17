@@ -4,7 +4,7 @@ services:
     runtime: node
     rootDir: .
     buildCommand: bash build.sh
-    startCommand: cd backend && npx prisma migrate deploy && node dist/app.js
+    startCommand: cd backend && npx prisma migrate deploy && node dist/src/app.js
     envVars:
       - key: NODE_ENV
         value: production
