@@ -67,6 +67,12 @@
             <BnccSelector v-model="form.bncc_refs" />
           </div>
 
+          <!-- Indicador de quota de IA -->
+          <div v-if="quota" class="quota-bar" :class="quotaClass">
+            <i :class="quotaIcon" class="quota-icon" />
+            <span>{{ quotaLabel }}</span>
+          </div>
+
           <Message v-if="erroGeracao" severity="error" :closable="false">
             {{ erroGeracao }}
           </Message>
@@ -148,7 +154,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import Dropdown from 'primevue/dropdown'
 import DatePicker from 'primevue/datepicker'
 import Button from 'primevue/button'
@@ -165,6 +171,7 @@ import { usePageLayout } from '@/composables/usePageLayout'
 
 interface Aluno { id: string; nome: string; turma_id: string; turma_nome: string; avatar_id?: number | null }
 interface Rascunho { id: string; status: string; conteudo_gerado: string; conteudo_editado?: string }
+interface QuotaInfo { restante: number; total: number; percentual_restante: number; bloqueado: boolean; retorna_em?: string }
 
 const confirm = useConfirm()
 const toast = useToast()
@@ -195,6 +202,35 @@ const loadingAlunos = ref(false)
 const rascunho = ref<Rascunho | null>(null)
 const estaGerando = ref(false)
 const erroGeracao = ref('')
+const quota = ref<QuotaInfo | null>(null)
+let quotaInterval: ReturnType<typeof setInterval> | null = null
+
+const quotaClass = computed(() => {
+  if (!quota.value) return ''
+  if (quota.value.bloqueado) return 'quota-blocked'
+  if (quota.value.percentual_restante < 20) return 'quota-critical'
+  if (quota.value.percentual_restante < 50) return 'quota-warn'
+  return 'quota-ok'
+})
+
+const quotaIcon = computed(() => {
+  if (!quota.value) return ''
+  if (quota.value.bloqueado) return 'pi pi-ban'
+  if (quota.value.percentual_restante < 20) return 'pi pi-exclamation-triangle'
+  return 'pi pi-check-circle'
+})
+
+const quotaLabel = computed(() => {
+  if (!quota.value) return ''
+  if (quota.value.bloqueado) {
+    const hora = quota.value.retorna_em
+      ? new Date(quota.value.retorna_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' })
+      : 'meia-noite'
+    return `Limite de IA atingido — retorna às ${hora} (Brasília)`
+  }
+  if (quota.value.percentual_restante < 20) return `IA com capacidade reduzida (${quota.value.percentual_restante}% disponível)`
+  return 'IA disponível'
+})
 
 const alunoSelecionado = computed(() => alunos.value.find(a => a.id === form.value.aluno_id) ?? null)
 
@@ -307,6 +343,15 @@ const formularioValido = computed(() => {
 
 const podeFinalizar = computed(() => !!rascunho.value && rascunho.value.status !== 'finalizado')
 
+async function fetchQuota() {
+  try {
+    const { data } = await api.get<QuotaInfo>('/api/documents/quota')
+    quota.value = data
+  } catch {
+    /* non-critical */
+  }
+}
+
 onMounted(async () => {
   loadingAlunos.value = true
   try {
@@ -317,6 +362,12 @@ onMounted(async () => {
   } finally {
     loadingAlunos.value = false
   }
+  fetchQuota()
+  quotaInterval = setInterval(fetchQuota, 60_000) // atualiza a cada 1 min
+})
+
+onUnmounted(() => {
+  if (quotaInterval) clearInterval(quotaInterval)
 })
 
 async function gerarDocumento() {
@@ -332,6 +383,7 @@ async function gerarDocumento() {
     }
     const { data } = await api.post<{ rascunho: Rascunho }>('/api/documents/generate', payload)
     rascunho.value = data.rascunho
+    fetchQuota()
   } catch (err: unknown) {
     const error = err as { response?: { data?: { error?: string; message?: string } } }
     const msg = error?.response?.data?.message ?? error?.response?.data?.error ?? 'Erro ao gerar documento. Tente novamente.'
@@ -493,4 +545,21 @@ async function finalizar() {
   gap: 0.5rem;
 }
 .empty-state-tips li i { color: var(--acae-primary); font-size: 0.8rem; }
+
+/* ── Quota indicator ── */
+.quota-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  margin-bottom: 0.75rem;
+}
+.quota-ok { background: #f0faf0; color: #2d7a2d; border: 1px solid #b6e6b6; }
+.quota-warn { background: #fffbea; color: #7a5f00; border: 1px solid #ffe082; }
+.quota-critical { background: #fff4e5; color: #a04000; border: 1px solid #ffb347; }
+.quota-blocked { background: #ffeaea; color: #b00020; border: 1px solid #f5b8b8; }
+.quota-icon { font-size: 0.85rem; }
 </style>
