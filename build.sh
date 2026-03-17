@@ -15,8 +15,7 @@ rm -rf public
 cp -r ../frontend/dist public
 echo "🔨 Buildando backend..."
 npm run build
-echo "🗄️  Aplicando migrations do banco..."
+echo "🗄️  Gerando Prisma Client..."
 npx prisma generate
-npx prisma migrate deploy
 
-echo "✅ Build completo!"
+echo "✅ Build completo! (migrations rodam no start)"
