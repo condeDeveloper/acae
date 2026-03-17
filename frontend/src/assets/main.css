@@ -253,6 +253,22 @@ body {
   box-shadow: 0 0 0 3px var(--acae-primary-dim) !important;
 }
 
+/* DatePicker com showIcon: mantém borda dourada no input E no botão enquanto qualquer parte está focada ou o calendário está aberto */
+.p-datepicker:has(button):focus-within .p-datepicker-input,
+.p-datepicker:has(button):focus-within input.p-inputtext,
+.p-datepicker:has(input[aria-expanded="true"]) .p-datepicker-input,
+.p-datepicker:has(input[aria-expanded="true"]) input.p-inputtext {
+  border-color: var(--acae-primary) !important;
+  box-shadow: 0 0 0 3px var(--acae-primary-dim) !important;
+  outline: none !important;
+}
+.p-datepicker:has(button):focus-within button,
+.p-datepicker:has(input[aria-expanded="true"]) button {
+  border-color: var(--acae-primary) !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
 /* ── Tags ── */
 .p-tag {
   border-radius: 20px !important;
@@ -411,6 +427,13 @@ body {
   color: var(--acae-primary-text) !important;
   box-shadow: 0 2px 8px var(--acae-primary-glow) !important;
 }
+/* Input ao lado esquerdo do ícone de calendário (showIcon): sem borda direita, sem arredondamento direito */
+.p-datepicker:has(button) .p-datepicker-input,
+.p-datepicker:has(button) input.p-inputtext {
+  border-right: none !important;
+  border-radius: 10px 0 0 10px !important;
+}
+
 .p-datepicker-dropdown,
 .p-datepicker-dropdown.p-button,
 .p-datepicker-button,
@@ -448,6 +471,32 @@ body {
   background: var(--acae-primary) !important;
   color: var(--acae-primary-text) !important;
   font-weight: 700 !important;
+}
+
+/* ── Empty state (global) ── */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 5rem 2rem;
+  text-align: center;
+  gap: 0.75rem;
+}
+.empty-icon {
+  font-size: 3.5rem;
+  color: var(--text-3);
+}
+.empty-title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--text-2);
+  margin: 0;
+}
+.empty-sub {
+  font-size: 0.875rem;
+  color: var(--text-3);
+  margin: 0;
 }
 
 /* ── Cursor pointer for clickable rows ── */

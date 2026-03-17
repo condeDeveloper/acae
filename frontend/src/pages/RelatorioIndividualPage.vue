@@ -20,12 +20,12 @@
 
           <div class="field">
             <label>Período Início</label>
-            <DatePicker v-model="store.form.periodo_inicio" dateFormat="dd/mm/yy" fluid />
+            <DatePicker v-model="store.form.periodo_inicio" dateFormat="dd/mm/yy" fluid showIcon :maxDate="store.form.periodo_fim ?? hoje" />
           </div>
 
           <div class="field">
             <label>Período Fim</label>
-            <DatePicker v-model="store.form.periodo_fim" dateFormat="dd/mm/yy" fluid />
+            <DatePicker v-model="store.form.periodo_fim" dateFormat="dd/mm/yy" fluid showIcon :maxDate="hoje" :minDate="store.form.periodo_inicio ?? undefined" />
           </div>
 
           <div class="field">
@@ -106,6 +106,8 @@ interface Aluno { id: string; nome: string; turma_id: string; turma_nome: string
 const confirm = useConfirm()
 const toast = useToast()
 const store = useRelatorioStore()
+
+const hoje = new Date()
 usePageLayout({ title: 'Relatório Individual', subtitle: 'Gere e gerencie relatórios individuais dos alunos' })
 
 const alunos = ref<Aluno[]>([])

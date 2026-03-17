@@ -136,7 +136,16 @@
         </div>
         <div class="field">
           <label>Data de Nascimento</label>
-          <DatePicker v-model="form.data_nascimento" dateFormat="dd/mm/yy" fluid showIcon />
+          <DatePicker
+            v-model="form.data_nascimento"
+            dateFormat="dd/mm/yy"
+            fluid
+            showIcon
+            monthNavigator
+            yearNavigator
+            yearRange="1950:2030"
+            :maxDate="hoje"
+          />
         </div>
         <div class="field">
           <label>Necessidades Educacionais Especiais</label>
@@ -202,6 +211,8 @@ interface Aluno {
 
 const toast = useToast()
 const confirm = useConfirm()
+
+const hoje = new Date()
 
 const turmas = ref<Turma[]>([])
 const alunos = ref<Aluno[]>([])

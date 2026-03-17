@@ -14,8 +14,14 @@
             optionValue="id"
             placeholder="Selecione a turma"
             class="w-full"
+            :optionDisabled="(t: { id: string }) => !turmasComAlunos.has(t.id)"
             @change="onTurmaChange"
-          />
+          >
+            <template #option="{ option }">
+              <span>{{ option.nome }}</span>
+              <span v-if="!turmasComAlunos.has(option.id)" style="color: var(--acae-red); font-size: 0.8em; margin-left: 4px">— cadastre um aluno</span>
+            </template>
+          </Select>
         </div>
 
         <div class="field">
@@ -248,6 +254,7 @@ import AvatarInitials from '@/components/AvatarInitials.vue'
 // ── Estado ────────────────────────────────────────────────────────
 usePageLayout({ title: 'Atividades BNCC', subtitle: 'Sorteie atividades pedagógicas baseadas na BNCC com IA' })
 const turmas = ref<{ id: string; nome: string }[]>([])
+const turmasComAlunos = ref(new Set<string>())
 const alunos = ref<{ id: string; nome: string; avatar_id: number | null }[]>([])
 const turma_id = ref<string | undefined>()
 const aluno_id = ref<string | undefined>()
@@ -392,9 +399,11 @@ function dificuldadeSeverity(d: string): 'success' | 'warn' | 'danger' | 'second
   return ({ basica: 'success', intermediaria: 'warn', avancada: 'danger' } as Record<string, 'success' | 'warn' | 'danger'>)[d] ?? 'secondary'
 }
 
-onMounted(() => {
+onMounted(async () => {
   carregarTurmas()
   carregarAreas()
+  const res = await api.get<{ data: { turma_id: string }[] }>('/api/alunos')
+  turmasComAlunos.value = new Set((res.data.data ?? []).map(a => a.turma_id))
 })
 </script>
 

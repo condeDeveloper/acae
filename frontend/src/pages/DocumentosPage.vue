@@ -1,6 +1,13 @@
 <template>
   <div class="page-container">
+    <div v-if="!loading && documentos.length === 0" class="empty-state">
+      <i class="pi pi-file empty-icon" />
+      <p class="empty-title">Nenhum documento gerado ainda</p>
+      <p class="empty-sub">Gere um documento na aba "Gerar" para ele aparecer aqui</p>
+    </div>
+
     <DataTable
+      v-else
       :value="documentos"
       :loading="loading"
       :paginator="documentos.length > 20"
@@ -8,7 +15,6 @@
       :rowsPerPageOptions="[10, 20, 50]"
       sortField="finalizado_em"
       :sortOrder="-1"
-      emptyMessage="Nenhum documento encontrado"
       class="cursor-pointer-rows"
       @row-click="abrirDownload($event.data)"
     >

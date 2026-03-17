@@ -50,6 +50,7 @@
           v-model="dataSelecionada"
           dateFormat="dd/mm/yy"
           :maxDate="hoje"
+          showIcon
           style="min-width: 175px"
           @update:modelValue="onDataChange"
         />
@@ -69,6 +70,19 @@
     <div v-else-if="!turmaSelecionada" class="empty-card">
       <i class="pi pi-users" />
       <p>Selecione uma turma para iniciar a chamada</p>
+    </div>
+
+    <!-- Turma sem alunos -->
+    <div v-else-if="chamada && chamada.presencas.length === 0" class="empty-card">
+      <i class="pi pi-user-plus" />
+      <p>Esta turma não tem alunos cadastrados</p>
+      <p class="empty-hint">Adicione alunos na aba <strong>Alunos</strong> para registrar chamadas</p>
+    </div>
+
+    <!-- Data sem chamada -->
+    <div v-else-if="!chamada" class="empty-card">
+      <i class="pi pi-calendar-times" />
+      <p>Nenhuma chamada registrada para esta data</p>
     </div>
 
     <!-- Attendance table -->
@@ -527,6 +541,7 @@ watch(turmaSelecionada, () => {
 }
 .loading-card i, .empty-card i { font-size: 2rem; opacity: 0.5; }
 .empty-card.small { min-height: 120px; padding: 1.5rem; }
+.empty-hint { font-size: 0.85rem; color: var(--text-3); margin: 0; }
 
 /* ── Chamada card ── */
 .chamada-card {

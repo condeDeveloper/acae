@@ -36,8 +36,14 @@
               placeholder="Todas as turmas"
               showClear
               class="w-full"
+              :optionDisabled="(t: { id: string }) => !turmasComAvaliacoes.has(t.id)"
               @change="onFiltraTurmaChange"
-            />
+            >
+              <template #option="{ option }">
+                <span>{{ option.nome }}</span>
+                <span v-if="!turmasComAvaliacoes.has(option.id)" style="color: var(--acae-red); font-size: 0.8em; margin-left: 4px">— Avalie um aluno</span>
+              </template>
+            </Select>
           </div>
 
           <div class="field">
@@ -52,7 +58,12 @@
               :disabled="!filtraTurma"
               class="w-full"
               @change="carregarAvaliacoes"
-            />
+            >
+              <template #option="{ option }">
+                <span>{{ option.nome }}</span>
+                <span v-if="!alunosComAvaliacoes.has(option.id)" style="color: var(--acae-red); font-size: 0.8em; margin-left: 4px">— avalie um aluno</span>
+              </template>
+            </Select>
           </div>
         </div>
 
@@ -144,8 +155,9 @@
                   v-model="form.data_teste"
                   dateFormat="dd/mm/yy"
                   :maxDate="hoje"
+                  showIcon
+                  fluid
                   placeholder="Ex: 09/03/2026"
-                  class="w-full"
                 />
                 <small class="field-hint">Exemplo: 09/03/2026</small>
               </div>
@@ -480,6 +492,10 @@ const turmas = ref<{ id: string; nome: string }[]>([])
 const alunosFiltrados = ref<{ id: string; nome: string }[]>([])
 const alunosForm = ref<{ id: string; nome: string }[]>([])
 const avaliacoes = ref<AvaliacaoVineland[]>([])
+const todasAvaliacoes = ref<AvaliacaoVineland[]>([])
+
+const turmasComAvaliacoes = computed(() => new Set(todasAvaliacoes.value.map(av => av.aluno.turma.id)))
+const alunosComAvaliacoes = computed(() => new Set(todasAvaliacoes.value.map(av => av.aluno.id)))
 const avaliacaoSelecionada = ref<AvaliacaoVineland | null>(null)
 const mostrarFormulario = ref(false)
 const editandoId = ref<string | null>(null)
@@ -782,6 +798,7 @@ function confirmarExcluir(id: string) {
 onMounted(async () => {
   await carregarTurmas()
   await carregarAvaliacoes()
+  todasAvaliacoes.value = [...avaliacoes.value]
 })
 </script>
 

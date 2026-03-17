@@ -39,6 +39,7 @@
               v-model="form.periodo_inicio"
               dateFormat="dd/mm/yy"
               fluid
+              showIcon
               :maxDate="tipoFixoPeriodo ? hoje : (form.periodo_fim ?? hoje)"
               :minDate="tipoFixoPeriodo ? undefined : minInicio"
               @update:modelValue="onInicioChange"
@@ -55,6 +56,7 @@
               v-model="form.periodo_fim"
               dateFormat="dd/mm/yy"
               fluid
+              showIcon
               :disabled="tipoFixoPeriodo"
               :maxDate="tipoFixoPeriodo ? undefined : hoje"
               :minDate="tipoFixoPeriodo ? undefined : (form.periodo_inicio ?? undefined)"

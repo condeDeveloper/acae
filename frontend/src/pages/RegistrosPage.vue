@@ -24,7 +24,13 @@
             optionValue="id"
             placeholder="Selecione a turma"
             style="min-width: 240px"
-          />
+            :optionDisabled="(t: { id: string }) => !turmasComAlunos.has(t.id)"
+          >
+            <template #option="{ option }">
+              <span>{{ option.nome }}</span>
+              <span v-if="!turmasComAlunos.has(option.id)" style="color: var(--acae-red); font-size: 0.8em; margin-left: 4px">— cadastre um aluno</span>
+            </template>
+          </Select>
         </div>
         <div class="field-inline">
           <label>Aluno</label>
@@ -43,14 +49,19 @@
     </div>
 
     <!-- Tabela -->
-    <div>
+    <div v-if="!loading && registros.length === 0" class="empty-state">
+      <i class="pi pi-book empty-icon" />
+      <p class="empty-title">Nenhum registro encontrado</p>
+      <p class="empty-sub">Adicione um registro clicando em "Novo Registro"</p>
+    </div>
+
+    <div v-else>
     <DataTable
       :value="registros"
       :loading="loading"
       stripedRows
       sortField="periodo"
       :sortOrder="-1"
-      emptyMessage="Nenhum registro encontrado."
       :paginator="registros.length > 10"
       :rows="10"
       :rowsPerPageOptions="[10, 25, 50]"
@@ -170,6 +181,8 @@
             placeholder="Selecione a data de referência"
             fluid
             showIcon
+            :minDate="inicioAnoAtual"
+            :maxDate="hoje"
           />
         </div>
 
@@ -298,8 +311,12 @@ const { isMobile } = useIsMobile()
 const toast   = useToast()
 const confirm = useConfirm()
 
+const hoje           = new Date()
+const inicioAnoAtual = new Date(hoje.getFullYear(), 0, 1)
+
 const modoFiltro         = ref<'todos' | 'turma'>('todos')
 const turmas             = ref<Turma[]>([])
+const turmasComAlunos    = ref(new Set<string>())
 const alunos             = ref<Aluno[]>([])
 const alunosDialog       = ref<Aluno[]>([])
 const registros          = ref<Registro[]>([])
@@ -560,6 +577,8 @@ async function excluir(id: string) {
 onMounted(() => trackLoad((async () => {
   await carregarTurmas()
   await carregarTodos()
+  const { data } = await api.get<{ data: { turma_id: string }[] }>('/api/alunos')
+  turmasComAlunos.value = new Set((data.data ?? []).map(a => a.turma_id))
 })()))
 </script>
 
