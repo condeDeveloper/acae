@@ -13,8 +13,10 @@ npm install --include=dev
 echo "🔨 Copiando dist do frontend para backend/public..."
 rm -rf public
 cp -r ../frontend/dist public
-echo "🔨 Buildando backend..."
+echo "🔨 Buildando backend (tsc)..."
 npm run build
+echo "📁 Verificando dist/:"
+ls -la dist/ || echo "❌ PASTA dist NÃO EXISTE!"
 echo "🗄️  Gerando Prisma Client..."
 npx prisma generate
 
