@@ -37,7 +37,13 @@ const fastify = Fastify({
 async function build() {
   // CORS — deve ser registrado antes de qualquer rota
   await fastify.register(cors, {
-    origin: process.env.CORS_ORIGIN ?? 'http://localhost:5173',
+    origin: process.env.CORS_ORIGIN
+      ? process.env.CORS_ORIGIN
+      : (origin, cb) => {
+          // Em dev, aceita qualquer localhost
+          if (!origin || /^http:\/\/localhost:\d+$/.test(origin)) cb(null, true)
+          else cb(new Error('CORS bloqueado'), false)
+        },
     credentials: true,
     methods: ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   })
