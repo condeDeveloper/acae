@@ -38,14 +38,20 @@ const fastify = Fastify({
 
 async function build() {
   // CORS — deve ser registrado antes de qualquer rota
+  const allowedOrigins = new Set([
+    ...(process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',').map(o => o.trim()) : []),
+    ...(process.env.APP_URL ? [process.env.APP_URL.trim()] : []),
+  ])
   await fastify.register(cors, {
-    origin: process.env.CORS_ORIGIN
-      ? process.env.CORS_ORIGIN
-      : (origin, cb) => {
-          // Em dev, aceita qualquer localhost
-          if (!origin || /^http:\/\/localhost:\d+$/.test(origin)) cb(null, true)
-          else cb(new Error('CORS bloqueado'), false)
-        },
+    origin: (origin, cb) => {
+      // Sem origin (curl, mobile apps, navegadores em same-origin plain fetch) → ok
+      if (!origin) return cb(null, true)
+      // Dev: qualquer localhost
+      if (/^http:\/\/localhost:\d+$/.test(origin)) return cb(null, true)
+      // Produção: domínios explicitamente configurados
+      if (allowedOrigins.has(origin)) return cb(null, true)
+      cb(Object.assign(new Error('CORS bloqueado'), { statusCode: 403 }), false)
+    },
     credentials: true,
     methods: ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   })
