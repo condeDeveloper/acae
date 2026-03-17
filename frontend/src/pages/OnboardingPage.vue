@@ -188,7 +188,7 @@ async function concluir() {
   margin-bottom: 0.25rem;
 }
 .logo-img { height: 40px; }
-.logo-text { font-size: 1.5rem; font-weight: 900; color: var(--primary, #2563eb); letter-spacing: -0.03em; }
+.logo-text { font-size: 1.5rem; font-weight: 900; color: var(--acae-blue, #4A90E2); letter-spacing: -0.03em; }
 
 .step-indicator {
   display: flex;
@@ -204,10 +204,10 @@ async function concluir() {
 .step-dot.active {
   width: 24px;
   border-radius: 4px;
-  background: var(--primary, #2563eb);
+  background: var(--acae-blue, #4A90E2);
 }
 .step-dot.done {
-  background: var(--primary, #2563eb);
+  background: var(--acae-blue, #4A90E2);
   opacity: 0.4;
 }
 
@@ -223,14 +223,14 @@ async function concluir() {
   width: 64px;
   height: 64px;
   border-radius: 50%;
-  background: color-mix(in srgb, var(--primary, #2563eb) 12%, transparent);
+  background: color-mix(in srgb, var(--acae-blue, #4A90E2) 12%, transparent);
   display: flex;
   align-items: center;
   justify-content: center;
 }
 .step-icon .pi {
   font-size: 1.75rem;
-  color: var(--primary, #2563eb);
+  color: var(--acae-blue, #4A90E2);
 }
 
 .step-title {
@@ -266,7 +266,7 @@ async function concluir() {
   color: var(--text-1, #111);
 }
 .features-list .pi {
-  color: var(--primary, #2563eb);
+  color: var(--acae-blue, #4A90E2);
   font-size: 1rem;
   flex-shrink: 0;
 }

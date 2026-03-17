@@ -67,12 +67,14 @@ export default async function authRoutes(fastify: FastifyInstance) {
     },
     async (request) => {
       const p = request.professor
-      // Fetch full profile including onboarding_concluido (not in professor middleware by default)
-      const full = await prisma.professor.findUnique({
-        where: { id: p.id },
-        select: { id: true, nome: true, email: true, papel: true, escola: true, onboarding_concluido: true },
-      })
-      return full
+      return {
+        id: p.id,
+        nome: p.nome,
+        email: p.email,
+        papel: p.papel,
+        escola: p.escola,
+        onboarding_concluido: p.onboarding_concluido,
+      }
     },
   )
 
