@@ -1,8 +1,10 @@
 import axios from 'axios'
 import { supabase } from './supabase'
 
+// Em dev: usa VITE_API_BASE_URL (ex: http://localhost:3000)
+// Em prod: baseURL vazio = chamadas relativas (front e back no mesmo domínio)
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL as string,
+  baseURL: import.meta.env.VITE_API_BASE_URL || '',
   timeout: 30_000,
 })
 

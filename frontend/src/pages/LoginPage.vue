@@ -128,6 +128,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useRoute } from 'vue-router'
 import InputText from 'primevue/inputtext'
 import Password from 'primevue/password'
 import Button from 'primevue/button'
@@ -136,8 +137,9 @@ import Checkbox from 'primevue/checkbox'
 import { useAuthStore } from '@/stores/auth'
 
 const authStore = useAuthStore()
+const route = useRoute()
 
-const aba = ref<'login' | 'cadastro'>('login')
+const aba = ref<'login' | 'cadastro'>(route.query.tab === 'cadastro' ? 'cadastro' : 'login')
 const nome = ref('')
 const email = ref('')
 const password = ref('')

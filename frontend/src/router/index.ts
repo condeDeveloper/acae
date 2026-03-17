@@ -4,6 +4,8 @@ import { useAuthStore } from '@/stores/auth'
 const router = createRouter({
   history: createWebHistory(),
   routes: [
+    // Landing page (public)
+    { path: '/', name: 'landing', component: () => import('@/pages/LandingPage.vue') },
     // Public routes
     {
       path: '/login',
@@ -12,20 +14,30 @@ const router = createRouter({
         { path: '', name: 'login', component: () => import('@/pages/LoginPage.vue') },
       ],
     },
+    // Onboarding (authenticated but outside AppLayout)
+    {
+      path: '/onboarding',
+      name: 'onboarding',
+      component: () => import('@/pages/OnboardingPage.vue'),
+      meta: { requiresAuth: true },
+    },
     // Protected routes
     {
       path: '/',
       component: () => import('@/layouts/AppLayout.vue'),
       meta: { requiresAuth: true },
       children: [
-        { path: '', name: 'dashboard', redirect: '/turmas' },
+        { path: '', name: 'dashboard', redirect: '/turmas', meta: { requiresAuth: true } },
         { path: 'turmas', name: 'turmas', component: () => import('@/pages/TurmasPage.vue') },
         { path: 'alunos', name: 'alunos', component: () => import('@/pages/AlunosPage.vue') },
         { path: 'registros', name: 'registros', component: () => import('@/pages/RegistrosPage.vue'), meta: { requiresAuth: true } },
         { path: 'documentos', name: 'documentos', component: () => import('@/pages/DocumentosPage.vue'), meta: { requiresAuth: true } },
         { path: 'documentos/gerar', name: 'gerar-documento', component: () => import('@/pages/GerarDocumentoPage.vue'), meta: { requiresAuth: true } },
+        { path: 'chamada', name: 'chamada', component: () => import('@/pages/ChamadaPage.vue'), meta: { requiresAuth: true } },
         { path: 'relatorio-individual', name: 'relatorio-individual', component: () => import('@/pages/RelatorioIndividualPage.vue'), meta: { requiresAuth: true } },
         { path: 'atividades', name: 'atividades', component: () => import('@/pages/AtividadesPage.vue'), meta: { requiresAuth: true } },
+        { path: 'ocorrencias', name: 'ocorrencias', component: () => import('@/pages/OcorrenciasPage.vue'), meta: { requiresAuth: true } },
+        { path: 'vineland', name: 'vineland', component: () => import('@/pages/VinelandPage.vue'), meta: { requiresAuth: true } },
         { path: 'perfil', name: 'perfil', component: () => import('@/pages/PerfilPage.vue') },
         { path: '403', name: 'forbidden', component: () => import('@/pages/ForbiddenPage.vue') },
       ],
@@ -41,6 +53,21 @@ router.beforeEach(async (to) => {
 
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
     return { path: '/login', query: { redirect: to.fullPath } }
+  }
+
+  // Authenticated + onboarding done + landing → go to app
+  if (authStore.isAuthenticated && authStore.professor?.onboarding_concluido && to.name === 'landing') {
+    return { path: '/turmas' }
+  }
+
+  // Redirect to onboarding if not completed yet (skip if already going there)
+  if (
+    authStore.isAuthenticated &&
+    authStore.professor &&
+    !authStore.professor.onboarding_concluido &&
+    to.name !== 'onboarding'
+  ) {
+    return { path: '/onboarding' }
   }
 
   if (to.meta.role === 'coordenador' && authStore.papel !== 'coordenador') {

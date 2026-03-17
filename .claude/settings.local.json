@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -s http://localhost:3000/health)",
+      "Bash(npm root:*)",
+      "Bash(npm bin:*)",
+      "Read(//c/Projetos/acae/**)",
+      "Bash(npm prefix:*)",
+      "Bash(CLAUDE_PATH=\"/c/Users/dcava/.vscode/extensions/anthropic.claude-code-2.1.76-win32-x64/resources/native-binary\")",
+      "Bash(powershell.exe -Command \"[Environment]::SetEnvironmentVariable\\(''PATH'', $env:PATH + '';C:\\\\Users\\\\dcava\\\\.vscode\\\\extensions\\\\anthropic.claude-code-2.1.76-win32-x64\\\\resources\\\\native-binary'', ''User''\\)\")"
+    ]
+  }
+}

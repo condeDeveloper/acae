@@ -12,17 +12,17 @@
       class="cursor-pointer-rows"
       @row-click="abrirDownload($event.data)"
     >
-      <Column field="aluno_nome" header="Aluno" sortable style="width:25%" />
-      <Column field="tipo" header="Tipo" sortable style="width:30%">
+      <Column field="aluno_nome" header="Aluno" sortable />
+      <Column field="tipo" header="Tipo" sortable>
         <template #body="{ data }">{{ tipoLabel(data.tipo) }}</template>
       </Column>
-      <Column field="periodo" header="Período" sortable style="width:25%" />
-      <Column field="finalizado_em" header="Data" sortable style="width:12%">
+      <Column v-if="!isMobile" field="periodo" header="Período" sortable />
+      <Column v-if="!isMobile" field="finalizado_em" header="Data" sortable>
         <template #body="{ data }">
           {{ data.finalizado_em ? new Date(data.finalizado_em).toLocaleDateString('pt-BR') : '—' }}
         </template>
       </Column>
-      <Column header="Download" style="width:8%; text-align: center">
+      <Column header="Download" style="text-align: center">
         <template #body="{ data }">
           <Button icon="pi pi-download" text rounded @click.stop="abrirFormato(data)" />
         </template>
@@ -61,6 +61,8 @@ import Dialog from 'primevue/dialog'
 import BotaoExportar from '@/components/BotaoExportar.vue'
 import api from '@/services/api'
 import { usePageLayout } from '@/composables/usePageLayout'
+import { usePageLoading } from '@/composables/usePageLoading'
+import { useIsMobile } from '@/composables/useIsMobile'
 
 interface Documento {
   id: string
@@ -75,6 +77,8 @@ interface Documento {
 
 const documentos = ref<Documento[]>([])
 usePageLayout({ title: 'Histórico de Documentos', subtitle: 'Clique em um documento para baixar' })
+const { trackLoad } = usePageLoading()
+const { isMobile } = useIsMobile()
 const loading = ref(false)
 const downloadVisible = ref(false)
 const selecionado = ref<Documento | null>(null)
@@ -102,16 +106,14 @@ function abrirFormato(doc: Documento) {
   formatoVisible.value = true
 }
 
-onMounted(async () => {
+onMounted(() => {
   loading.value = true
-  try {
-    const { data } = await api.get<{ data: Documento[] }>('/api/documentos')
-    documentos.value = data.data
-  } catch {
-    /* handled by interceptor */
-  } finally {
-    loading.value = false
-  }
+  trackLoad(
+    api.get<{ data: Documento[] }>('/api/documentos')
+      .then(({ data }) => { documentos.value = data.data })
+      .catch(() => { /* handled by interceptor */ })
+      .finally(() => { loading.value = false })
+  )
 })
 </script>
 

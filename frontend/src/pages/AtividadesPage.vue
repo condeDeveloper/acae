@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="page-container">
     <div class="atividades-layout">
       <!-- ── Painel de Filtros ── -->
@@ -96,10 +96,8 @@
           <Button
             label="Novo Sorteio"
             icon="pi pi-sync"
-            severity="secondary"
-            outlined
+            class="w-full novo-sorteio-btn"
             size="small"
-            class="w-full"
             @click="gerarAtividades"
           />
         </div>
@@ -130,7 +128,11 @@
         <!-- Cabeçalho do resultado -->
         <div v-if="!loadingGerar && atividadesGeradas.length > 0" class="resultado-header">
           <div class="resultado-info">
-            <span class="aluno-tag"><i class="pi pi-user" /> {{ alunoNome }}</span>
+            <span class="aluno-tag">
+              <img v-if="getAvatarSrc(alunoAvatarId)" :src="getAvatarSrc(alunoAvatarId)!" class="aluno-tag-img" alt="avatar" />
+              <AvatarInitials v-else :nome="alunoNome" :seed="alunoId || alunoNome" :size="26" />
+              {{ alunoNome }}
+            </span>
             <span class="count-tag">{{ atividadesGeradas.length }} atividade{{ atividadesGeradas.length !== 1 ? 's' : '' }} sorteada{{ atividadesGeradas.length !== 1 ? 's' : '' }}</span>
           </div>
         </div>
@@ -145,10 +147,8 @@
             <div class="atividade-card-header">
               <span class="atividade-numero">{{ idx + 1 }}</span>
               <div class="atividade-meta">
-                <span class="atividade-area">{{ atividade.area_conhecimento }}</span>
-                <span :class="['dif-badge', `dif-badge--${atividade.dificuldade}`]">
-                  {{ labelDificuldade(atividade.dificuldade) }}
-                </span>
+                <Tag :value="atividade.area_conhecimento" severity="warn" class="area-tag" />
+                <Tag :value="labelDificuldade(atividade.dificuldade)" :severity="dificuldadeSeverity(atividade.dificuldade)" />
               </div>
             </div>
 
@@ -201,6 +201,7 @@
               <Button
                 :label="expandido === atividade.id ? 'Recolher' : 'Ver detalhes'"
                 :icon="expandido === atividade.id ? 'pi pi-chevron-up' : 'pi pi-chevron-down'"
+                class="ver-detalhes-btn"
                 text
                 size="small"
                 @click="toggleExpandido(atividade.id)"
@@ -238,16 +239,21 @@ import { ref, onMounted, computed } from 'vue'
 import Select from 'primevue/select'
 import Button from 'primevue/button'
 import InputNumber from 'primevue/inputnumber'
+import Tag from 'primevue/tag'
 import api from '@/services/api'
 import { usePageLayout } from '@/composables/usePageLayout'
+import { getAvatarSrc } from '@/composables/useAvatars'
+import AvatarInitials from '@/components/AvatarInitials.vue'
 
 // ── Estado ────────────────────────────────────────────────────────
 usePageLayout({ title: 'Atividades BNCC', subtitle: 'Sorteie atividades pedagógicas baseadas na BNCC com IA' })
 const turmas = ref<{ id: string; nome: string }[]>([])
-const alunos = ref<{ id: string; nome: string }[]>([])
+const alunos = ref<{ id: string; nome: string; avatar_id: number | null }[]>([])
 const turma_id = ref<string | undefined>()
 const aluno_id = ref<string | undefined>()
 const alunoNome = ref('')
+const alunoId = ref('')
+const alunoAvatarId = ref<number | null>(null)
 const loadingAlunos = ref(false)
 const quantidade = ref(3)
 const loadingGerar = ref(false)
@@ -340,6 +346,8 @@ async function gerarAtividades() {
 
   const aluno = alunos.value.find(a => a.id === aluno_id.value)
   alunoNome.value = aluno?.nome ?? ''
+  alunoId.value = aluno?.id ?? ''
+  alunoAvatarId.value = aluno?.avatar_id ?? null
 
   try {
     const resp = await api.post(`/api/alunos/${aluno_id.value}/atividades/gerar`, {
@@ -378,6 +386,10 @@ function toggleExpandido(id: string) {
 
 function labelDificuldade(d: string) {
   return { basica: 'Básica', intermediaria: 'Intermediária', avancada: 'Avançada' }[d] ?? d
+}
+
+function dificuldadeSeverity(d: string): 'success' | 'warn' | 'danger' | 'secondary' {
+  return ({ basica: 'success', intermediaria: 'warn', avancada: 'danger' } as Record<string, 'success' | 'warn' | 'danger'>)[d] ?? 'secondary'
 }
 
 onMounted(() => {
@@ -562,7 +574,7 @@ onMounted(() => {
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background: var(--acae-primary);
+  background: var(--acae-blue);
   color: #fff;
   display: flex;
   align-items: center;
@@ -573,26 +585,6 @@ onMounted(() => {
 }
 
 .atividade-meta { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
-
-.atividade-area {
-  font-size: 0.75rem;
-  color: var(--acae-primary);
-  background: var(--acae-primary-dim);
-  padding: 0.2rem 0.6rem;
-  border-radius: 20px;
-  font-weight: 600;
-}
-
-.dif-badge {
-  font-size: 0.72rem;
-  padding: 0.15rem 0.5rem;
-  border-radius: 20px;
-  font-weight: 600;
-}
-
-.dif-badge--basica { background: rgba(16,185,129,0.15); color: #34d399; }
-.dif-badge--intermediaria { background: rgba(245,158,11,0.15); color: #fbbf24; }
-.dif-badge--avancada { background: rgba(239,68,68,0.15); color: #f87171; }
 
 .atividade-titulo {
   font-size: 1rem;
@@ -668,5 +660,57 @@ onMounted(() => {
   padding-top: 0.75rem;
   border-top: 1px solid var(--border);
   flex-wrap: wrap;
+}
+
+/* ── Aluno tag avatar ── */
+.aluno-tag-img {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(255,204,2,0.4);
+  flex-shrink: 0;
+}
+
+.aluno-tag-anon {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--bg-overlay);
+  border: 2px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  color: var(--text-3);
+  flex-shrink: 0;
+}
+
+:deep(.area-tag.p-tag) {
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+:deep(.ver-detalhes-btn.p-button) { color: var(--acae-blue) !important; }
+:deep(.ver-detalhes-btn.p-button:hover) { background: var(--acae-blue-dim) !important; color: var(--acae-blue) !important; }
+
+:deep(.gerar-btn.p-button) {
+  background: linear-gradient(135deg, #FFCC02 0%, #E8A800 100%) !important;
+  border-color: #E8A800 !important;
+  color: #1a1a1a !important;
+  font-weight: 700 !important;
+}
+:deep(.gerar-btn.p-button:hover:not(:disabled)) {
+  background: linear-gradient(135deg, #f0be00 0%, #d49800 100%) !important;
+}
+
+:deep(.novo-sorteio-btn.p-button) {
+  background: linear-gradient(135deg, var(--acae-blue) 0%, #2d6bc4 100%) !important;
+  border-color: #2d6bc4 !important;
+  color: #fff !important;
+  font-weight: 700 !important;
+}
+:deep(.novo-sorteio-btn.p-button:hover:not(:disabled)) {
+  background: linear-gradient(135deg, #3d84d8 0%, #2460b5 100%) !important;
 }
 </style>

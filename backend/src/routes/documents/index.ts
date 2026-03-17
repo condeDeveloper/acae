@@ -4,7 +4,7 @@ import { gerarDocx, buildHtml } from '../../services/export.service.js'
 import { gerarPdf } from '../../services/pdf.service.js'
 import { criarToken } from '../../services/download-token.service.js'
 import { prisma } from '../../plugins/prisma.js'
-import { QuotaExceededError } from '../../services/quota.service.js'
+import { QuotaExceededError, getQuotaInfo } from '../../services/quota.service.js'
 
 export default async function documentsRoutes(fastify: FastifyInstance) {
   /**
@@ -189,6 +189,15 @@ export default async function documentsRoutes(fastify: FastifyInstance) {
       expira_em: expira.toISOString(),
       formato: ext,
     }
+  })
+
+  /**
+   * GET /api/documents/quota
+   * Returns current daily AI quota status.
+   */
+  fastify.get('/api/documents/quota', async (_request, reply) => {
+    const info = await getQuotaInfo()
+    return reply.send(info)
   })
 
   /**

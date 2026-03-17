@@ -66,9 +66,12 @@ model Professor {
   status           StatusProfessor @default(ativo)
   supabase_user_id String          @unique @db.Uuid
 
+  onboarding_concluido Boolean         @default(false)
+
   turmas    Turma[]
   rascunhos RascunhoDocumento[]
   versoes   VersaoDocumento[]
+  chamadas  Chamada[]
 
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
@@ -97,12 +100,27 @@ model Turma {
   registros RegistroAluno[]
   rascunhos RascunhoDocumento[]
   versoes   VersaoDocumento[]
+  chamadas  Chamada[]
 
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
   @@index([professor_id])
   @@map("turmas")
+}
+
+// ─────────────────────────────────────────────────────────────
+// 2.5 AVATAR DE ALUNO
+// ─────────────────────────────────────────────────────────────
+
+model AvatarImagem {
+  id      Int    @id
+  nome    String
+  arquivo String
+
+  alunos Aluno[]
+
+  @@map("avatar_imagens")
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -116,13 +134,18 @@ model Aluno {
   necessidades_educacionais String?     @db.Text
   status                    StatusAluno @default(ativo)
 
+  avatar_id Int?
+  avatar    AvatarImagem? @relation(fields: [avatar_id], references: [id])
+
   turma_id String @db.Uuid
   turma    Turma  @relation(fields: [turma_id], references: [id])
 
-  grupos    GrupoAluno[]
-  registros RegistroAluno[]
-  rascunhos RascunhoDocumento[]
-  versoes   VersaoDocumento[]
+  grupos     GrupoAluno[]
+  registros  RegistroAluno[]
+  rascunhos  RascunhoDocumento[]
+  versoes    VersaoDocumento[]
+  presencas  PresencaChamada[]
+  vineland   AvaliacaoVineland[]
 
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
@@ -330,4 +353,89 @@ model ControleCotas {
   updated_at DateTime @updatedAt
 
   @@map("controle_cotas")
+}
+
+// ─────────────────────────────────────────────────────────────
+// 12. CHAMADA (frequência diária por turma)
+// ─────────────────────────────────────────────────────────────
+
+model Chamada {
+  id   String   @id @default(uuid()) @db.Uuid
+  data DateTime @db.Date
+
+  turma_id String @db.Uuid
+  turma    Turma  @relation(fields: [turma_id], references: [id])
+
+  professor_id String    @db.Uuid
+  professor    Professor @relation(fields: [professor_id], references: [id])
+
+  presencas PresencaChamada[]
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@unique([turma_id, data])
+  @@index([professor_id])
+  @@map("chamadas")
+}
+
+model PresencaChamada {
+  id      String  @id @default(uuid()) @db.Uuid
+  presente Boolean @default(false)
+
+  chamada_id String  @db.Uuid
+  chamada    Chamada @relation(fields: [chamada_id], references: [id], onDelete: Cascade)
+
+  aluno_id String @db.Uuid
+  aluno    Aluno  @relation(fields: [aluno_id], references: [id])
+
+  @@unique([chamada_id, aluno_id])
+  @@index([aluno_id])
+  @@map("presencas_chamada")
+}
+
+// ─────────────────────────────────────────────────────────────
+// 13. AVALIAÇÃO VINELAND-3
+// ─────────────────────────────────────────────────────────────
+
+model AvaliacaoVineland {
+  id         String   @id @default(uuid()) @db.Uuid
+  avaliador  String
+  data_teste DateTime @db.Date
+
+  // Comunicação
+  com_bruta    Int
+  com_padrao   Int    // pontuação padrão (CCA do domínio)
+  com_nivel    String // "Baixo", "Moderado", etc.
+  com_ic       String? // "51-61"
+  com_percentil String? // "<1", "75", etc.
+
+  // Atividades de Vida Diária
+  avd_bruta    Int
+  avd_padrao   Int
+  avd_nivel    String
+  avd_ic       String?
+  avd_percentil String?
+
+  // Socialização
+  soc_bruta    Int
+  soc_padrao   Int
+  soc_nivel    String?
+  soc_ic       String?
+  soc_percentil String?
+
+  // Composto
+  soma_padroes  Int     // COM+AVD+SOC padrões
+  cca_composto  Int     // Composto de Comportamento Adaptativo
+  cca_ic        String? // "66-74"
+  cca_percentil String? // "2"
+
+  aluno_id String @db.Uuid
+  aluno    Aluno  @relation(fields: [aluno_id], references: [id])
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@index([aluno_id])
+  @@map("avaliacoes_vineland")
 }

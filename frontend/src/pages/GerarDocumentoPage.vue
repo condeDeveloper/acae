@@ -32,15 +32,15 @@
 
           <div class="field" v-if="precisaDeDatas">
             <label>
-              Período Início
-              <span class="label-badge">{{ labelDias(form.periodo_inicio) }}</span>
+              {{ tipoFixoPeriodo ? 'Data de início' : 'Período Início' }}
+              <Tag v-if="labelDias(form.periodo_inicio)" :value="labelDias(form.periodo_inicio)" severity="warn" />
             </label>
             <DatePicker
               v-model="form.periodo_inicio"
               dateFormat="dd/mm/yy"
               fluid
-              :maxDate="form.periodo_fim ?? hoje"
-              :minDate="minInicio"
+              :maxDate="tipoFixoPeriodo ? hoje : (form.periodo_fim ?? hoje)"
+              :minDate="tipoFixoPeriodo ? undefined : minInicio"
               @update:modelValue="onInicioChange"
             />
           </div>
@@ -48,14 +48,16 @@
           <div class="field" v-if="precisaDeDatas">
             <label>
               Período Fim
-              <span class="label-badge">{{ labelDias(form.periodo_fim) }}</span>
+              <Tag v-if="tipoFixoPeriodo && form.periodo_fim" :value="labelPeriodoAutoFim" severity="info" />
+              <Tag v-else-if="!tipoFixoPeriodo && labelDias(form.periodo_fim)" :value="labelDias(form.periodo_fim)" severity="warn" />
             </label>
             <DatePicker
               v-model="form.periodo_fim"
               dateFormat="dd/mm/yy"
               fluid
-              :maxDate="hoje"
-              :minDate="form.periodo_inicio ?? undefined"
+              :disabled="tipoFixoPeriodo"
+              :maxDate="tipoFixoPeriodo ? undefined : hoje"
+              :minDate="tipoFixoPeriodo ? undefined : (form.periodo_inicio ?? undefined)"
               @update:modelValue="onFimChange"
             />
           </div>
@@ -63,6 +65,12 @@
           <div class="field">
             <label>Competências BNCC</label>
             <BnccSelector v-model="form.bncc_refs" />
+          </div>
+
+          <!-- Indicador de quota de IA -->
+          <div v-if="quota" class="quota-bar" :class="quotaClass">
+            <i :class="quotaIcon" class="quota-icon" />
+            <span>{{ quotaLabel }}</span>
           </div>
 
           <Message v-if="erroGeracao" severity="error" :closable="false">
@@ -74,6 +82,7 @@
             icon="pi pi-sparkles"
             :loading="estaGerando"
             :disabled="!formularioValido"
+            class="btn-gerar-azul"
             @click="gerarDocumento"
             fluid
           />
@@ -81,13 +90,41 @@
 
         <!-- Histórico de relatórios (apenas para relatorio_individual) -->
         <div class="historico-section" v-if="form.tipo === 'relatorio_individual' && form.aluno_id">
-          <HistoricoRelatorios :aluno-id="form.aluno_id" />
+          <HistoricoRelatorios
+            :aluno-id="form.aluno_id"
+            :aluno-avatar-id="alunoSelecionado?.avatar_id ?? null"
+            :aluno-nome="alunoSelecionado?.nome ?? ''"
+          />
         </div>
       </div>
 
-      <!-- Rascunho -->
-      <div class="col-12 lg:col-7" v-if="rascunho">
-        <div class="rascunho-card sticky top-4">
+      <!-- Rascunho / Empty state -->
+      <div class="col-12 lg:col-7">
+        <!-- Empty state when no document generated yet -->
+        <div v-if="!rascunho && !estaGerando" class="empty-state-card sticky top-4">
+          <i class="pi pi-file-edit empty-state-icon" />
+          <h3 class="empty-state-title">Nenhum documento gerado ainda</h3>
+          <p class="empty-state-desc">
+            Preencha o formulário ao lado e clique em
+            <strong>Gerar Documento</strong> para criar um rascunho com IA.
+          </p>
+          <ul class="empty-state-tips">
+            <li><i class="pi pi-check-circle" /> Selecione o tipo de documento</li>
+            <li><i class="pi pi-check-circle" /> Escolha o aluno</li>
+            <li><i class="pi pi-check-circle" /> Defina o período</li>
+            <li><i class="pi pi-check-circle" /> Vincule competências BNCC</li>
+          </ul>
+        </div>
+
+        <!-- Loading state -->
+        <div v-if="estaGerando" class="empty-state-card sticky top-4 loading-state">
+          <i class="pi pi-spin pi-spinner empty-state-icon" style="color: var(--acae-blue)" />
+          <h3 class="empty-state-title">Gerando documento com IA...</h3>
+          <p class="empty-state-desc">Aguarde enquanto a inteligência artificial cria seu documento personalizado.</p>
+        </div>
+
+        <!-- Rascunho when generated -->
+        <div v-if="rascunho" class="rascunho-card sticky top-4">
           <div class="rascunho-header">
             <h3>Rascunho Gerado</h3>
             <Tag :value="rascunho.status" />
@@ -117,7 +154,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import Dropdown from 'primevue/dropdown'
 import DatePicker from 'primevue/datepicker'
 import Button from 'primevue/button'
@@ -132,8 +169,9 @@ import HistoricoRelatorios from '@/components/HistoricoRelatorios.vue'
 import api from '@/services/api'
 import { usePageLayout } from '@/composables/usePageLayout'
 
-interface Aluno { id: string; nome: string; turma_id: string; turma_nome: string }
+interface Aluno { id: string; nome: string; turma_id: string; turma_nome: string; avatar_id?: number | null }
 interface Rascunho { id: string; status: string; conteudo_gerado: string; conteudo_editado?: string }
+interface QuotaInfo { restante: number; total: number; percentual_restante: number; bloqueado: boolean; retorna_em?: string }
 
 const confirm = useConfirm()
 const toast = useToast()
@@ -164,22 +202,59 @@ const loadingAlunos = ref(false)
 const rascunho = ref<Rascunho | null>(null)
 const estaGerando = ref(false)
 const erroGeracao = ref('')
+const quota = ref<QuotaInfo | null>(null)
+let quotaInterval: ReturnType<typeof setInterval> | null = null
+
+const quotaClass = computed(() => {
+  if (!quota.value) return ''
+  if (quota.value.bloqueado) return 'quota-blocked'
+  if (quota.value.percentual_restante < 20) return 'quota-critical'
+  if (quota.value.percentual_restante < 50) return 'quota-warn'
+  return 'quota-ok'
+})
+
+const quotaIcon = computed(() => {
+  if (!quota.value) return ''
+  if (quota.value.bloqueado) return 'pi pi-ban'
+  if (quota.value.percentual_restante < 20) return 'pi pi-exclamation-triangle'
+  return 'pi pi-check-circle'
+})
+
+const quotaLabel = computed(() => {
+  if (!quota.value) return ''
+  if (quota.value.bloqueado) {
+    const hora = quota.value.retorna_em
+      ? new Date(quota.value.retorna_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' })
+      : 'meia-noite'
+    return `Limite de IA atingido — retorna às ${hora} (Brasília)`
+  }
+  if (quota.value.percentual_restante < 20) return `IA com capacidade reduzida (${quota.value.percentual_restante}% disponível)`
+  return 'IA disponível'
+})
+
+const alunoSelecionado = computed(() => alunos.value.find(a => a.id === form.value.aluno_id) ?? null)
 
 const precisaDeDatas = computed(() => form.value.tipo !== 'resumo_pedagogico' && form.value.tipo !== 'atividade_adaptada')
 
-// Min inicio based on tipo and current fim
+// Tipos onde o fim é calculado automaticamente a partir do início
+const tipoFixoPeriodo = computed(() =>
+  form.value.tipo === 'portfolio_semanal' || form.value.tipo === 'portfolio_mensal'
+)
+
+// Min inicio — só relevante para relatorio_individual
 const minInicio = computed(() => {
-  if (form.value.tipo === 'portfolio_semanal' && form.value.periodo_fim) {
+  if (form.value.tipo === 'relatorio_individual' && form.value.periodo_fim) {
     const d = new Date(form.value.periodo_fim)
-    d.setDate(d.getDate() - 7)
-    return d
-  }
-  if (form.value.tipo === 'portfolio_mensal' && form.value.periodo_fim) {
-    const d = new Date(form.value.periodo_fim)
-    d.setMonth(d.getMonth() - 1)
+    d.setFullYear(d.getFullYear() - 2)
     return d
   }
   return undefined
+})
+
+// Label informativo do fim auto-calculado
+const labelPeriodoAutoFim = computed(() => {
+  if (!form.value.periodo_fim) return ''
+  return `até ${form.value.periodo_fim.toLocaleDateString('pt-BR')}`
 })
 
 function labelDias(date: Date | null): string {
@@ -196,53 +271,49 @@ function labelDias(date: Date | null): string {
 }
 
 function setDatasAutomaticas(tipo: string) {
-  const fim = new Date()
-  fim.setHours(0, 0, 0, 0)
   if (tipo === 'portfolio_semanal') {
-    const inicio = new Date(fim)
-    inicio.setDate(inicio.getDate() - 7)
-    form.value.periodo_fim = new Date(fim)
+    // Default: semana atual começando na segunda-feira
+    const hoje2 = new Date()
+    hoje2.setHours(0, 0, 0, 0)
+    const diaSemana = hoje2.getDay() === 0 ? 7 : hoje2.getDay()
+    const inicio = new Date(hoje2)
+    inicio.setDate(hoje2.getDate() - (diaSemana - 1))
     form.value.periodo_inicio = inicio
+    const fim = new Date(inicio)
+    fim.setDate(inicio.getDate() + 6)
+    form.value.periodo_fim = fim
   } else if (tipo === 'portfolio_mensal') {
-    const inicio = new Date(fim)
-    inicio.setMonth(inicio.getMonth() - 1)
-    form.value.periodo_fim = new Date(fim)
+    // Default: mês atual (1º ao último dia)
+    const hoje2 = new Date()
+    const inicio = new Date(hoje2.getFullYear(), hoje2.getMonth(), 1)
+    const fim = new Date(hoje2.getFullYear(), hoje2.getMonth() + 1, 0)
     form.value.periodo_inicio = inicio
+    form.value.periodo_fim = fim
   } else if (tipo === 'relatorio_individual') {
-    // Keep as is — user sets manually
+    // Usuário define manualmente — não pré-preencher
   } else {
     form.value.periodo_inicio = null
     form.value.periodo_fim = null
   }
 }
 
-// Clamp period_inicio when period_fim changes (enforce max range)
-function onFimChange(val: Date | null) {
-  if (!val) return
-  if (form.value.tipo === 'portfolio_semanal' && form.value.periodo_inicio) {
-    const minI = new Date(val)
-    minI.setDate(minI.getDate() - 7)
-    if (form.value.periodo_inicio < minI) form.value.periodo_inicio = minI
-  }
-  if (form.value.tipo === 'portfolio_mensal' && form.value.periodo_inicio) {
-    const minI = new Date(val)
-    minI.setMonth(minI.getMonth() - 1)
-    if (form.value.periodo_inicio < minI) form.value.periodo_inicio = minI
-  }
+// Fim livre apenas para relatorio_individual
+function onFimChange(_val: Date | null) {
+  // noop para semanal/mensal (fim é sempre auto-calculado)
 }
 
-// Clamp period_fim when period_inicio changes (enforce max range)
+// Ao mudar início: auto-calcula fim para semanal/mensal
 function onInicioChange(val: Date | null) {
   if (!val) return
-  if (form.value.tipo === 'portfolio_semanal' && form.value.periodo_fim) {
-    const maxF = new Date(val)
-    maxF.setDate(maxF.getDate() + 7)
-    if (form.value.periodo_fim > maxF) form.value.periodo_fim = maxF
-  }
-  if (form.value.tipo === 'portfolio_mensal' && form.value.periodo_fim) {
-    const maxF = new Date(val)
-    maxF.setMonth(maxF.getMonth() + 1)
-    if (form.value.periodo_fim > maxF) form.value.periodo_fim = maxF
+  if (form.value.tipo === 'portfolio_semanal') {
+    const fim = new Date(val)
+    fim.setDate(fim.getDate() + 6) // 7 dias inclusivos
+    form.value.periodo_fim = fim
+  } else if (form.value.tipo === 'portfolio_mensal') {
+    const fim = new Date(val)
+    fim.setMonth(fim.getMonth() + 1)
+    fim.setDate(fim.getDate() - 1) // último dia do mês
+    form.value.periodo_fim = fim
   }
 }
 
@@ -272,6 +343,15 @@ const formularioValido = computed(() => {
 
 const podeFinalizar = computed(() => !!rascunho.value && rascunho.value.status !== 'finalizado')
 
+async function fetchQuota() {
+  try {
+    const { data } = await api.get<QuotaInfo>('/api/documents/quota')
+    quota.value = data
+  } catch {
+    /* non-critical */
+  }
+}
+
 onMounted(async () => {
   loadingAlunos.value = true
   try {
@@ -282,6 +362,12 @@ onMounted(async () => {
   } finally {
     loadingAlunos.value = false
   }
+  fetchQuota()
+  quotaInterval = setInterval(fetchQuota, 60_000) // atualiza a cada 1 min
+})
+
+onUnmounted(() => {
+  if (quotaInterval) clearInterval(quotaInterval)
 })
 
 async function gerarDocumento() {
@@ -297,6 +383,7 @@ async function gerarDocumento() {
     }
     const { data } = await api.post<{ rascunho: Rascunho }>('/api/documents/generate', payload)
     rascunho.value = data.rascunho
+    fetchQuota()
   } catch (err: unknown) {
     const error = err as { response?: { data?: { error?: string; message?: string } } }
     const msg = error?.response?.data?.message ?? error?.response?.data?.error ?? 'Erro ao gerar documento. Tente novamente.'
@@ -374,13 +461,15 @@ async function finalizar() {
   align-items: center;
   gap: 0.5rem;
 }
-.label-badge {
-  font-size: 0.75rem;
-  font-weight: 400;
-  color: var(--acae-primary);
-  background: var(--acae-primary-dim);
-  padding: 0.1rem 0.4rem;
-  border-radius: 999px;
+:deep(.btn-gerar-azul.p-button) {
+  background: linear-gradient(135deg, var(--acae-blue) 0%, #2d6bc4 100%) !important;
+  border-color: #2d6bc4 !important;
+  color: #fff !important;
+  font-weight: 700;
+}
+:deep(.btn-gerar-azul.p-button:hover:not(:disabled)) {
+  background: linear-gradient(135deg, #3d84d8 0%, #2460b5 100%) !important;
+  border-color: #2460b5 !important;
 }
 .rascunho-header {
   display: flex;
@@ -404,4 +493,73 @@ async function finalizar() {
   .lg\:col-5 { flex: 0 0 calc(41.6667% - 0.75rem); }
   .lg\:col-7 { flex: 0 0 calc(58.3333% - 0.75rem); }
 }
+
+/* ── Empty state ── */
+.empty-state-card {
+  background: var(--bg-card);
+  border: 2px dashed var(--border);
+  border-radius: 10px;
+  padding: 3rem 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 1rem;
+  min-height: 340px;
+  justify-content: center;
+}
+.loading-state { border-style: solid; border-color: var(--acae-blue); }
+.empty-state-icon {
+  font-size: 3.5rem;
+  color: var(--text-3);
+  opacity: 0.6;
+}
+.empty-state-title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-2);
+  font-family: 'Nunito', sans-serif;
+}
+.empty-state-desc {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--text-3);
+  max-width: 360px;
+  line-height: 1.5;
+}
+.empty-state-tips {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  text-align: left;
+}
+.empty-state-tips li {
+  font-size: 0.8rem;
+  color: var(--text-3);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.empty-state-tips li i { color: var(--acae-primary); font-size: 0.8rem; }
+
+/* ── Quota indicator ── */
+.quota-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  margin-bottom: 0.75rem;
+}
+.quota-ok { background: #f0faf0; color: #2d7a2d; border: 1px solid #b6e6b6; }
+.quota-warn { background: #fffbea; color: #7a5f00; border: 1px solid #ffe082; }
+.quota-critical { background: #fff4e5; color: #a04000; border: 1px solid #ffb347; }
+.quota-blocked { background: #ffeaea; color: #b00020; border: 1px solid #f5b8b8; }
+.quota-icon { font-size: 0.85rem; }
 </style>

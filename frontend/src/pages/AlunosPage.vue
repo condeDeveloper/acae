@@ -29,12 +29,18 @@
       />
     </div>
 
+    <!-- Empty state quando não há alunos -->
+    <div v-if="!loading && alunosFiltrados.length === 0" class="empty-state">
+      <i class="pi pi-users empty-icon" />
+      <p class="empty-title">Nenhum aluno encontrado</p>
+      <p class="empty-sub">Adicione alunos clicando em "Novo Aluno" ou ajuste o filtro de turma</p>
+    </div>
+
+    <div v-else>
     <DataTable
       :value="alunosFiltrados"
       :loading="loading"
       stripedRows
-      responsiveLayout="scroll"
-      emptyMessage="Nenhum aluno encontrado."
       sortField="turma_nome"
       :sortOrder="1"
       :paginator="alunosFiltrados.length > 10"
@@ -44,20 +50,21 @@
       @row-click="abrirCard($event.data)"
     >
       <Column field="nome" header="Nome" sortable>
-        <template #body="{ data, index }">
+        <template #body="{ data }">
           <div class="aluno-nome-cell">
-            <img :src="getKidImage(index)" class="aluno-avatar" alt="avatar" />
+            <img v-if="getAvatarSrc(data.avatar_id)" :src="getAvatarSrc(data.avatar_id)!" class="aluno-avatar" alt="avatar" />
+            <AvatarInitials v-else :nome="data.nome" :seed="data.id" :size="38" />
             <span>{{ data.nome }}</span>
           </div>
         </template>
       </Column>
       <Column field="turma_nome" header="Turma" sortable />
-      <Column field="data_nascimento" header="Nascimento">
+      <Column v-if="!isMobile" field="data_nascimento" header="Nascimento">
         <template #body="{ data }">
           {{ data.data_nascimento ? formatarData(data.data_nascimento) : '—' }}
         </template>
       </Column>
-      <Column field="necessidades_educacionais" header="Necessidades Especiais">
+      <Column v-if="!isMobile" field="necessidades_educacionais" header="Necessidades Especiais">
         <template #body="{ data }">
           {{ data.necessidades_educacionais || '—' }}
         </template>
@@ -71,12 +78,14 @@
         </template>
       </Column>
     </DataTable>
+    </div>
 
     <!-- Card Aluno -->
     <Dialog v-model:visible="cardVisible" header="Detalhes do Aluno" modal :style="{ width: '420px' }">
       <div v-if="cardAluno" class="card-detalhe">
         <div class="card-avatar-wrap">
-          <img :src="getKidImage(alunos.findIndex(a => a.id === cardAluno!.id))" class="card-avatar-img" alt="avatar" />
+          <img v-if="getAvatarSrc(cardAluno.avatar_id)" :src="getAvatarSrc(cardAluno.avatar_id)!" class="card-avatar-img" alt="avatar" />
+          <AvatarInitials v-else :nome="cardAluno.nome" :seed="cardAluno.id" :size="90" />
         </div>
         <div class="card-nome">{{ cardAluno.nome }}</div>
         <div class="card-campo"><span class="card-label">Turma</span><span class="card-valor">{{ cardAluno.turma_nome }}</span></div>
@@ -92,8 +101,8 @@
         </div>
       </div>
       <template #footer>
-        <Button label="Fechar" text @click="cardVisible = false" />
-        <Button label="Editar" icon="pi pi-pencil" @click="cardVisible = false; abrirDialogEditar(cardAluno!)" />
+        <Button label="Fechar" severity="info" @click="cardVisible = false" />
+        <Button label="Editar" icon="pi pi-pencil" severity="success" @click="cardVisible = false; abrirDialogEditar(cardAluno!)" />
       </template>
     </Dialog>
 
@@ -105,6 +114,10 @@
       :style="{ width: '440px' }"
     >
       <div class="dialog-form">
+        <div class="field">
+          <label>Avatar</label>
+          <AvatarSelector v-model="form.avatar_id" />
+        </div>
         <div class="field">
           <label>Nome Completo *</label>
           <InputText v-model="form.nome" placeholder="Nome do aluno" fluid />
@@ -137,10 +150,11 @@
       </div>
 
       <template #footer>
-        <Button label="Cancelar" text @click="dialogVisible = false" />
+        <Button label="Cancelar" severity="info" @click="dialogVisible = false" />
         <Button
           :label="editando ? 'Salvar' : 'Adicionar Aluno'"
           icon="pi pi-check"
+          severity="success"
           :loading="salvando"
           :disabled="!formValido"
           @click="salvar"
@@ -165,17 +179,15 @@ import { useToast } from 'primevue/usetoast'
 import { useConfirm } from 'primevue/useconfirm'
 import api from '@/services/api'
 import { usePageLayout } from '@/composables/usePageLayout'
+import { usePageLoading } from '@/composables/usePageLoading'
+import { useIsMobile } from '@/composables/useIsMobile'
+import { getAvatarSrc } from '@/composables/useAvatars'
+import AvatarSelector from '@/components/AvatarSelector.vue'
+import AvatarInitials from '@/components/AvatarInitials.vue'
 
-// ── Kid avatars (drawings) ──────────────────────────────────────────────────
 usePageLayout({ title: 'Alunos', subtitle: 'Gerencie os alunos das suas turmas' })
-const kidModules = import.meta.glob('@/assets/drawings/kid*.png', { eager: true })
-const kidImages: string[] = Object.values(kidModules).map((m: any) => m.default)
-
-function getKidImage(index: number): string {
-  if (kidImages.length === 0) return ''
-  return kidImages[Math.abs(index) % kidImages.length]
-}
-// ───────────────────────────────────────────────────────────────────────────
+const { trackLoad } = usePageLoading()
+const { isMobile } = useIsMobile()
 
 interface Turma { id: string; nome: string }
 interface Aluno {
@@ -185,6 +197,7 @@ interface Aluno {
   necessidades_educacionais: string | null
   turma_id: string
   turma_nome: string
+  avatar_id: number | null
 }
 
 const toast = useToast()
@@ -220,7 +233,8 @@ const form = ref<{
   turma_id: string
   data_nascimento: Date | null
   necessidades_educacionais: string
-}>({ nome: '', turma_id: '', data_nascimento: null, necessidades_educacionais: '' })
+  avatar_id: number | null
+}>({ nome: '', turma_id: '', data_nascimento: null, necessidades_educacionais: '', avatar_id: null })
 
 const formValido = computed(() => form.value.nome.trim().length > 0 && form.value.turma_id !== '')
 
@@ -266,6 +280,7 @@ function abrirDialogNovo() {
     turma_id: turmaSelecionada.value ?? '',
     data_nascimento: null,
     necessidades_educacionais: '',
+    avatar_id: null,
   }
   dialogVisible.value = true
 }
@@ -277,6 +292,7 @@ function abrirDialogEditar(aluno: Aluno) {
     turma_id: aluno.turma_id,
     data_nascimento: aluno.data_nascimento ? new Date(aluno.data_nascimento) : null,
     necessidades_educacionais: aluno.necessidades_educacionais ?? '',
+    avatar_id: aluno.avatar_id ?? null,
   }
   dialogVisible.value = true
 }
@@ -289,6 +305,7 @@ function confirmarExcluir(aluno: Aluno) {
     acceptLabel: 'Excluir',
     rejectLabel: 'Cancelar',
     acceptClass: 'p-button-danger',
+    rejectClass: 'p-button-info',
     accept: () => excluir(aluno.id),
   })
 }
@@ -307,17 +324,19 @@ async function salvar() {
   salvando.value = true
   try {
     if (editando.value) {
-      const patch: Record<string, string> = { nome: form.value.nome }
+      const patch: Record<string, unknown> = { nome: form.value.nome }
       if (form.value.necessidades_educacionais.trim())
         patch.necessidades_educacionais = form.value.necessidades_educacionais.trim()
+      patch.avatar_id = form.value.avatar_id ?? null
       await api.patch(`/api/alunos/${editando.value.id}`, patch)
       toast.add({ severity: 'success', summary: 'Aluno atualizado', life: 3000 })
     } else {
-      const payload: Record<string, string> = { nome: form.value.nome.trim() }
+      const payload: Record<string, unknown> = { nome: form.value.nome.trim() }
       if (form.value.data_nascimento)
         payload.data_nascimento = form.value.data_nascimento.toISOString().split('T')[0]
       if (form.value.necessidades_educacionais.trim())
         payload.necessidades_educacionais = form.value.necessidades_educacionais.trim()
+      if (form.value.avatar_id) payload.avatar_id = form.value.avatar_id
       await api.post(`/api/turmas/${form.value.turma_id}/alunos`, payload)
       toast.add({ severity: 'success', summary: 'Aluno adicionado', life: 3000 })
     }
@@ -330,9 +349,7 @@ async function salvar() {
   }
 }
 
-onMounted(async () => {
-  await Promise.all([carregarTurmas(), carregarAlunos()])
-})
+onMounted(() => trackLoad(Promise.all([carregarTurmas(), carregarAlunos()])))
 </script>
 
 <style scoped>
@@ -392,6 +409,24 @@ onMounted(async () => {
   border: 2.5px solid var(--acae-primary);
   box-shadow: 0 2px 8px var(--acae-primary-dim);
   flex-shrink: 0;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+:deep(tr:hover .aluno-avatar) {
+  transform: scale(1.13);
+  box-shadow: 0 4px 14px var(--acae-primary-dim);
+}
+:deep(tr:hover .avatar-initials-circle) {
+  transform: scale(1.13);
+  box-shadow: 0 3px 10px rgba(0,0,0,0.18);
+}
+.aluno-avatar--anon {
+  background: var(--bg-overlay);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  color: var(--text-3);
+  border: 2px solid var(--border);
 }
 /* ── Botões de ação lado a lado ── */
 .acoes-cell {
@@ -413,6 +448,48 @@ onMounted(async () => {
   object-fit: cover;
   border: 4px solid var(--acae-primary);
   box-shadow: 0 4px 18px var(--acae-primary-glow);
+}
+.card-avatar-anon {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  background: var(--bg-overlay);
+  border: 3px dashed var(--border-hover);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5rem;
+  color: var(--text-3);
+}
+
+@media (max-width: 768px) {
+  .filtro-bar { flex-wrap: wrap; gap: 0.5rem; }
+}
+
+/* ── Empty state ── */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 5rem 2rem;
+  text-align: center;
+  gap: 0.75rem;
+}
+.empty-icon {
+  font-size: 3.5rem;
+  color: var(--text-3);
+}
+.empty-title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--text-2);
+  margin: 0;
+}
+.empty-sub {
+  font-size: 0.875rem;
+  color: var(--text-3);
+  margin: 0;
 }
 
 /* ── Form ── */

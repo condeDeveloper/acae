@@ -1,5 +1,9 @@
 ﻿@import './acae-colors.css';
 
+html {
+  scrollbar-gutter: stable;
+}
+
 *, *::before, *::after {
   box-sizing: border-box;
 }
@@ -196,6 +200,42 @@ body {
   background: var(--bg-card) !important;
   border-top: 1.5px solid var(--border) !important;
   border-radius: 0 0 20px 20px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 0.75rem !important;
+  padding: 1.5rem 1.75rem !important;
+  min-height: 5rem !important;
+}
+
+/* X do dialog → vermelho gradiente (mesmo estilo do botão Excluir sólido) */
+.p-dialog-close-button,
+.p-dialog .p-dialog-header .p-dialog-close-button,
+.p-dialog .p-dialog-header .p-dialog-header-close {
+  background: linear-gradient(135deg, #F57070 0%, var(--acae-red) 55%, #D94B4B 100%) !important;
+  color: #fff !important;
+  border-radius: 50% !important;
+  border: none !important;
+  width: 2rem !important;
+  height: 2rem !important;
+  box-shadow: 0 4px 14px var(--acae-red-dim) !important;
+  transition: transform 0.22s cubic-bezier(0.4,0,0.2,1), box-shadow 0.28s, background 0.18s ease !important;
+}
+.p-dialog-close-button:hover,
+.p-dialog .p-dialog-header .p-dialog-close-button:hover,
+.p-dialog .p-dialog-header .p-dialog-header-close:hover {
+  background: linear-gradient(135deg, #EC5E5E 0%, #D94B4B 55%, #C03A3A 100%) !important;
+  transform: scale(1.2) translateY(-1px) !important;
+  box-shadow: 0 6px 20px rgba(242,92,92,0.55) !important;
+}
+.p-dialog-close-button:focus,
+.p-dialog-close-button:focus-visible,
+.p-dialog .p-dialog-header .p-dialog-close-button:focus,
+.p-dialog .p-dialog-header .p-dialog-close-button:focus-visible,
+.p-dialog .p-dialog-header .p-dialog-header-close:focus,
+.p-dialog .p-dialog-header .p-dialog-header-close:focus-visible {
+  outline: none !important;
+  box-shadow: 0 4px 14px var(--acae-red-dim) !important;
 }
 
 /* ── Inputs light ── */
@@ -255,13 +295,43 @@ body {
 }
 /* Danger botões sólidos (ex: confirmação) */
 .p-button.p-button-danger:not(.p-button-text) {
-  background: var(--acae-red) !important;
+  background: linear-gradient(135deg, #F57070 0%, var(--acae-red) 55%, #D94B4B 100%) !important;
   color: #fff !important;
+  border: none !important;
   box-shadow: 0 4px 14px var(--acae-red-dim) !important;
 }
 .p-button.p-button-danger:not(.p-button-text):hover {
-  background: #D94B4B !important;
-  box-shadow: 0 6px 20px var(--acae-red-dim) !important;
+  background: linear-gradient(135deg, #EC5E5E 0%, #D94B4B 55%, #C03A3A 100%) !important;
+  box-shadow: 0 6px 20px rgba(242,92,92,0.55) !important;
+  transform: translateY(-2px) !important;
+}
+
+/* Botão success → verde */
+.p-button.p-button-success:not(.p-button-text) {
+  background: linear-gradient(135deg, #5AE0A0 0%, #3DC98A 55%, #2BAF74 100%) !important;
+  color: #fff !important;
+  border: none !important;
+  box-shadow: 0 4px 14px rgba(61,201,138,0.40) !important;
+  transition: box-shadow 0.28s, transform 0.18s !important;
+}
+.p-button.p-button-success:not(.p-button-text):hover {
+  background: linear-gradient(135deg, #4DD494 0%, #33C07F 55%, #249A63 100%) !important;
+  box-shadow: 0 6px 20px rgba(61,201,138,0.55) !important;
+  transform: translateY(-2px) !important;
+}
+
+/* Botão info → azul */
+.p-button.p-button-info:not(.p-button-text) {
+  background: linear-gradient(135deg, #6BA8EE 0%, #4A90E2 55%, #3478CB 100%) !important;
+  color: #fff !important;
+  border: none !important;
+  box-shadow: 0 4px 14px rgba(74,144,226,0.40) !important;
+  transition: box-shadow 0.28s, transform 0.18s !important;
+}
+.p-button.p-button-info:not(.p-button-text):hover {
+  background: linear-gradient(135deg, #5A9AE8 0%, #3C82D6 55%, #2A6BBF 100%) !important;
+  box-shadow: 0 6px 20px rgba(74,144,226,0.55) !important;
+  transform: translateY(-2px) !important;
 }
 /* Danger texto/ícone (ex: lixeira na tabela) — fundo vermelho sólido + ícone branco */
 .p-button.p-button-text.p-button-danger,

@@ -18,3 +18,6 @@ npm-debug.log*
 # Editor
 .DS_Store
 Thumbs.db
+
+# Playwright MCP screenshots/logs
+.playwright-mcp/

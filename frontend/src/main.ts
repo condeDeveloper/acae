@@ -34,7 +34,7 @@ app.directive('tooltip', Tooltip)
 // We install the router AFTER init() so auth is ready first.
 
 // Validate required env vars
-const requiredEnv = ['VITE_SUPABASE_URL', 'VITE_SUPABASE_ANON_KEY', 'VITE_API_BASE_URL'] as const
+const requiredEnv = ['VITE_SUPABASE_URL', 'VITE_SUPABASE_ANON_KEY'] as const
 for (const key of requiredEnv) {
   if (!import.meta.env[key]) {
     console.error(`[ACAE] Missing required env var: ${key}`)

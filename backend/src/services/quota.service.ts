@@ -44,3 +44,29 @@ export async function incrementQuota(): Promise<number> {
 export function isQuotaWarning(remaining: number): boolean {
   return remaining <= DAILY_LIMIT - WARNING_THRESHOLD
 }
+
+export async function getQuotaInfo(): Promise<{
+  restante: number
+  total: number
+  percentual_restante: number
+  bloqueado: boolean
+  retorna_em?: string
+}> {
+  const today = todayBRT()
+  const cota = await prisma.controleCotas.findUnique({
+    where: { data: new Date(today) },
+  })
+  const count = cota?.contagem_requisicoes ?? 0
+  const restante = Math.max(0, DAILY_LIMIT - count)
+  const percentual_restante = Math.round((restante / DAILY_LIMIT) * 100)
+  const bloqueado = restante === 0
+
+  if (bloqueado) {
+    const midnight = new Date()
+    midnight.setUTCHours(3, 0, 0, 0)
+    if (midnight <= new Date()) midnight.setUTCDate(midnight.getUTCDate() + 1)
+    return { restante: 0, total: DAILY_LIMIT, percentual_restante: 0, bloqueado: true, retorna_em: midnight.toISOString() }
+  }
+
+  return { restante, total: DAILY_LIMIT, percentual_restante, bloqueado: false }
+}

@@ -1,13 +1,15 @@
 import { config } from 'dotenv'
-import { resolve } from 'path'
+import { resolve, join } from 'path'
 import { fileURLToPath } from 'url'
 import { dirname } from 'path'
+import { existsSync } from 'fs'
 
 // Carrega .env da raiz do monorepo (um nível acima do backend/)
 const __dirname = dirname(fileURLToPath(import.meta.url))
 config({ path: resolve(__dirname, '../../.env') })
 import Fastify from 'fastify'
 import cors from '@fastify/cors'
+import staticPlugin from '@fastify/static'
 import prismaPlugin from './plugins/prisma.js'
 import authPlugin from './plugins/auth.js'
 import errorHandlerPlugin from './plugins/error-handler.js'
@@ -22,6 +24,9 @@ import authRoutes from './routes/auth/index.js'
 import documentsRoutes from './routes/documents/index.js'
 import downloadsRoutes from './routes/downloads/index.js'
 import atividadesRoutes from './routes/atividades/index.js'
+import chamadasRoutes from './routes/chamadas/index.js'
+import ocorrenciasRoutes from './routes/ocorrencias/index.js'
+import vinelandRoutes from './routes/vineland/index.js'
 
 const fastify = Fastify({
   logger: {
@@ -34,7 +39,13 @@ const fastify = Fastify({
 async function build() {
   // CORS — deve ser registrado antes de qualquer rota
   await fastify.register(cors, {
-    origin: process.env.CORS_ORIGIN ?? 'http://localhost:5173',
+    origin: process.env.CORS_ORIGIN
+      ? process.env.CORS_ORIGIN
+      : (origin, cb) => {
+          // Em dev, aceita qualquer localhost
+          if (!origin || /^http:\/\/localhost:\d+$/.test(origin)) cb(null, true)
+          else cb(new Error('CORS bloqueado'), false)
+        },
     credentials: true,
     methods: ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   })
@@ -56,9 +67,27 @@ async function build() {
   await fastify.register(documentsRoutes)
   await fastify.register(downloadsRoutes)
   await fastify.register(atividadesRoutes)
+  await fastify.register(chamadasRoutes)
+  await fastify.register(ocorrenciasRoutes)
+  await fastify.register(vinelandRoutes)
 
   // Health check (sem auth)
   fastify.get('/health', async () => ({ status: 'ok', timestamp: new Date().toISOString() }))
+
+  // Servir frontend estático (produção)
+  const publicDir = join(__dirname, '..', 'public')
+  if (existsSync(publicDir)) {
+    await fastify.register(staticPlugin, {
+      root: publicDir,
+      prefix: '/',
+      // SPA fallback: rotas desconhecidas retornam index.html
+      index: 'index.html',
+    })
+    // Fallback para client-side routing do Vue Router
+    fastify.setNotFoundHandler((_req, reply) => {
+      reply.sendFile('index.html')
+    })
+  }
 
   return fastify
 }

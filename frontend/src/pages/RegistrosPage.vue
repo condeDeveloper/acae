@@ -43,11 +43,11 @@
     </div>
 
     <!-- Tabela -->
+    <div>
     <DataTable
       :value="registros"
       :loading="loading"
       stripedRows
-      responsiveLayout="scroll"
       sortField="periodo"
       :sortOrder="-1"
       emptyMessage="Nenhum registro encontrado."
@@ -58,25 +58,31 @@
       @row-click="abrirCard($event.data)"
     >
       <Column v-if="modoFiltro === 'todos'" field="aluno_nome" header="Aluno" sortable>
-        <template #body="{ data, index }">
+        <template #body="{ data }">
           <div class="reg-nome-cell">
-            <img :src="getKidImage(index)" class="reg-avatar" alt="avatar" />
+            <img
+              v-if="getAvatarSrc(data.aluno_avatar_id)"
+              :src="getAvatarSrc(data.aluno_avatar_id)!"
+              class="reg-avatar"
+              alt="avatar"
+            />
+            <AvatarInitials v-else :nome="data.aluno_nome" :seed="data.aluno_id ?? data.aluno_nome" :size="36" />
             <span>{{ data.aluno_nome }}</span>
           </div>
         </template>
       </Column>
-      <Column v-if="modoFiltro === 'todos'" field="turma_nome" header="Turma" sortable />
+      <Column v-if="modoFiltro === 'todos' && !isMobile" field="turma_nome" header="Turma" sortable />
       <Column field="periodo" header="Período" sortable>
         <template #body="{ data }">
           {{ formatarPeriodo(data.periodo) }}
         </template>
       </Column>
-      <Column header="Competências BNCC">
+      <Column v-if="!isMobile" header="Competências BNCC">
         <template #body="{ data }">
           <span class="bncc-count">{{ data.bncc_refs.length }} competência{{ data.bncc_refs.length !== 1 ? 's' : '' }}</span>
         </template>
       </Column>
-      <Column field="created_at" header="Criado em" sortable>
+      <Column v-if="!isMobile" field="created_at" header="Criado em" sortable>
         <template #body="{ data }">
           {{ formatarData(data.created_at) }}
         </template>
@@ -90,6 +96,7 @@
         </template>
       </Column>
     </DataTable>
+    </div>
 
     <!-- Card Registro -->
     <Dialog v-model:visible="cardVisible" header="Detalhes do Registro" modal :style="{ width: '520px' }">
@@ -224,10 +231,11 @@
       </div>
 
       <template #footer>
-        <Button label="Cancelar" text :disabled="salvando" @click="dialogVisible = false" />
+        <Button label="Cancelar" severity="info" :disabled="salvando" @click="dialogVisible = false" />
         <Button
           :label="editandoId ? 'Salvar Alterações' : 'Criar Registro'"
           icon="pi pi-check"
+          severity="success"
           :loading="salvando"
           :disabled="!formValido || loadingForm"
           @click="salvar"
@@ -253,6 +261,10 @@ import { useConfirm } from 'primevue/useconfirm'
 import BnccSelector from '@/components/BnccSelector.vue'
 import api from '@/services/api'
 import { usePageLayout } from '@/composables/usePageLayout'
+import { usePageLoading } from '@/composables/usePageLoading'
+import { useIsMobile } from '@/composables/useIsMobile'
+import { getAvatarSrc } from '@/composables/useAvatars'
+import AvatarInitials from '@/components/AvatarInitials.vue'
 
 interface Turma { id: string; nome: string }
 interface Aluno  { id: string; nome: string }
@@ -262,7 +274,9 @@ interface Registro {
   bncc_refs: string[]
   created_at: string
   updated_at: string
+  aluno_id?: string
   aluno_nome?: string
+  aluno_avatar_id?: number | null
   turma_nome?: string
 }
 interface RegistroFull extends Registro {
@@ -276,14 +290,10 @@ interface RegistroFull extends Registro {
 }
 
 usePageLayout({ title: 'Registros Pedagógicos', subtitle: 'Registre as atividades semanais dos alunos' })
+const { trackLoad } = usePageLoading()
+const { isMobile } = useIsMobile()
 
-// ── Kid avatars ──
-const kidModules = import.meta.glob('@/assets/drawings/kid*.png', { eager: true })
-const kidImages: string[] = Object.values(kidModules).map((m: any) => m.default)
-function getKidImage(index: number) {
-  if (kidImages.length === 0) return ''
-  return kidImages[Math.abs(index) % kidImages.length]
-}
+
 
 const toast   = useToast()
 const confirm = useConfirm()
@@ -487,7 +497,7 @@ async function abrirDialogEditar(id: string) {
 
 async function salvar() {
   if (!formValido.value) return
-  if (!editandoId.value && !aluno_id.value) return
+  if (!editandoId.value && !form.value.aluno_id && !aluno_id.value) return
   salvando.value  = true
   erroDialog.value = ''
 
@@ -532,6 +542,7 @@ function confirmarExcluir(registro: Registro) {
     acceptLabel: 'Excluir',
     rejectLabel: 'Cancelar',
     acceptClass: 'p-button-danger',
+    rejectClass: 'p-button-info',
     accept: () => excluir(registro.id),
   })
 }
@@ -546,10 +557,10 @@ async function excluir(id: string) {
   }
 }
 
-onMounted(async () => {
+onMounted(() => trackLoad((async () => {
   await carregarTurmas()
   await carregarTodos()
-})
+})()))
 </script>
 
 <style scoped>
@@ -618,6 +629,26 @@ onMounted(async () => {
   flex-shrink: 0;
   transition: transform 0.18s ease, box-shadow 0.18s ease;
 }
+:deep(tr:hover .reg-avatar) {
+  transform: scale(1.13);
+  box-shadow: 0 4px 14px var(--acae-primary-dim);
+}
+:deep(tr:hover .avatar-initials-circle) {
+  transform: scale(1.13);
+  box-shadow: 0 3px 10px rgba(0,0,0,0.18);
+}
+.reg-avatar-anon {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  background: var(--surface-100, #f3f4f6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--text-3);
+  font-size: 1rem;
+}
 .reg-nome-cell {
   display: flex;
   align-items: center;
@@ -648,4 +679,11 @@ onMounted(async () => {
 .card-label { font-size: 0.75rem; font-weight: 600; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.05em; }
 .card-valor { font-size: 0.9375rem; color: var(--text-1); white-space: pre-wrap; }
 :deep(.cursor-pointer-rows .p-datatable-tbody > tr) { cursor: pointer; }
+
+/* ── Mobile: scroll horizontal na tabela ── */
+.table-scroll-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  width: 100%;
+}
 </style>
