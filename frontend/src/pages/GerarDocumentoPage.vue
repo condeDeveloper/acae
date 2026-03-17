@@ -32,15 +32,15 @@
 
           <div class="field" v-if="precisaDeDatas">
             <label>
-              Período Início
+              {{ tipoFixoPeriodo ? 'Data de início' : 'Período Início' }}
               <Tag v-if="labelDias(form.periodo_inicio)" :value="labelDias(form.periodo_inicio)" severity="warn" />
             </label>
             <DatePicker
               v-model="form.periodo_inicio"
               dateFormat="dd/mm/yy"
               fluid
-              :maxDate="form.periodo_fim ?? hoje"
-              :minDate="minInicio"
+              :maxDate="tipoFixoPeriodo ? hoje : (form.periodo_fim ?? hoje)"
+              :minDate="tipoFixoPeriodo ? undefined : minInicio"
               @update:modelValue="onInicioChange"
             />
           </div>
@@ -48,14 +48,16 @@
           <div class="field" v-if="precisaDeDatas">
             <label>
               Período Fim
-              <Tag v-if="labelDias(form.periodo_fim)" :value="labelDias(form.periodo_fim)" severity="warn" />
+              <Tag v-if="tipoFixoPeriodo && form.periodo_fim" :value="labelPeriodoAutoFim" severity="info" />
+              <Tag v-else-if="!tipoFixoPeriodo && labelDias(form.periodo_fim)" :value="labelDias(form.periodo_fim)" severity="warn" />
             </label>
             <DatePicker
               v-model="form.periodo_fim"
               dateFormat="dd/mm/yy"
               fluid
-              :maxDate="hoje"
-              :minDate="form.periodo_inicio ?? undefined"
+              :disabled="tipoFixoPeriodo"
+              :maxDate="tipoFixoPeriodo ? undefined : hoje"
+              :minDate="tipoFixoPeriodo ? undefined : (form.periodo_inicio ?? undefined)"
               @update:modelValue="onFimChange"
             />
           </div>
@@ -198,19 +200,25 @@ const alunoSelecionado = computed(() => alunos.value.find(a => a.id === form.val
 
 const precisaDeDatas = computed(() => form.value.tipo !== 'resumo_pedagogico' && form.value.tipo !== 'atividade_adaptada')
 
-// Min inicio based on tipo and current fim
+// Tipos onde o fim é calculado automaticamente a partir do início
+const tipoFixoPeriodo = computed(() =>
+  form.value.tipo === 'portfolio_semanal' || form.value.tipo === 'portfolio_mensal'
+)
+
+// Min inicio — só relevante para relatorio_individual
 const minInicio = computed(() => {
-  if (form.value.tipo === 'portfolio_semanal' && form.value.periodo_fim) {
+  if (form.value.tipo === 'relatorio_individual' && form.value.periodo_fim) {
     const d = new Date(form.value.periodo_fim)
-    d.setDate(d.getDate() - 7)
-    return d
-  }
-  if (form.value.tipo === 'portfolio_mensal' && form.value.periodo_fim) {
-    const d = new Date(form.value.periodo_fim)
-    d.setMonth(d.getMonth() - 1)
+    d.setFullYear(d.getFullYear() - 2)
     return d
   }
   return undefined
+})
+
+// Label informativo do fim auto-calculado
+const labelPeriodoAutoFim = computed(() => {
+  if (!form.value.periodo_fim) return ''
+  return `até ${form.value.periodo_fim.toLocaleDateString('pt-BR')}`
 })
 
 function labelDias(date: Date | null): string {
@@ -227,53 +235,49 @@ function labelDias(date: Date | null): string {
 }
 
 function setDatasAutomaticas(tipo: string) {
-  const fim = new Date()
-  fim.setHours(0, 0, 0, 0)
   if (tipo === 'portfolio_semanal') {
-    const inicio = new Date(fim)
-    inicio.setDate(inicio.getDate() - 7)
-    form.value.periodo_fim = new Date(fim)
+    // Default: semana atual começando na segunda-feira
+    const hoje2 = new Date()
+    hoje2.setHours(0, 0, 0, 0)
+    const diaSemana = hoje2.getDay() === 0 ? 7 : hoje2.getDay()
+    const inicio = new Date(hoje2)
+    inicio.setDate(hoje2.getDate() - (diaSemana - 1))
     form.value.periodo_inicio = inicio
+    const fim = new Date(inicio)
+    fim.setDate(inicio.getDate() + 6)
+    form.value.periodo_fim = fim
   } else if (tipo === 'portfolio_mensal') {
-    const inicio = new Date(fim)
-    inicio.setMonth(inicio.getMonth() - 1)
-    form.value.periodo_fim = new Date(fim)
+    // Default: mês atual (1º ao último dia)
+    const hoje2 = new Date()
+    const inicio = new Date(hoje2.getFullYear(), hoje2.getMonth(), 1)
+    const fim = new Date(hoje2.getFullYear(), hoje2.getMonth() + 1, 0)
     form.value.periodo_inicio = inicio
+    form.value.periodo_fim = fim
   } else if (tipo === 'relatorio_individual') {
-    // Keep as is — user sets manually
+    // Usuário define manualmente — não pré-preencher
   } else {
     form.value.periodo_inicio = null
     form.value.periodo_fim = null
   }
 }
 
-// Clamp period_inicio when period_fim changes (enforce max range)
-function onFimChange(val: Date | null) {
-  if (!val) return
-  if (form.value.tipo === 'portfolio_semanal' && form.value.periodo_inicio) {
-    const minI = new Date(val)
-    minI.setDate(minI.getDate() - 7)
-    if (form.value.periodo_inicio < minI) form.value.periodo_inicio = minI
-  }
-  if (form.value.tipo === 'portfolio_mensal' && form.value.periodo_inicio) {
-    const minI = new Date(val)
-    minI.setMonth(minI.getMonth() - 1)
-    if (form.value.periodo_inicio < minI) form.value.periodo_inicio = minI
-  }
+// Fim livre apenas para relatorio_individual
+function onFimChange(_val: Date | null) {
+  // noop para semanal/mensal (fim é sempre auto-calculado)
 }
 
-// Clamp period_fim when period_inicio changes (enforce max range)
+// Ao mudar início: auto-calcula fim para semanal/mensal
 function onInicioChange(val: Date | null) {
   if (!val) return
-  if (form.value.tipo === 'portfolio_semanal' && form.value.periodo_fim) {
-    const maxF = new Date(val)
-    maxF.setDate(maxF.getDate() + 7)
-    if (form.value.periodo_fim > maxF) form.value.periodo_fim = maxF
-  }
-  if (form.value.tipo === 'portfolio_mensal' && form.value.periodo_fim) {
-    const maxF = new Date(val)
-    maxF.setMonth(maxF.getMonth() + 1)
-    if (form.value.periodo_fim > maxF) form.value.periodo_fim = maxF
+  if (form.value.tipo === 'portfolio_semanal') {
+    const fim = new Date(val)
+    fim.setDate(fim.getDate() + 6) // 7 dias inclusivos
+    form.value.periodo_fim = fim
+  } else if (form.value.tipo === 'portfolio_mensal') {
+    const fim = new Date(val)
+    fim.setMonth(fim.getMonth() + 1)
+    fim.setDate(fim.getDate() - 1) // último dia do mês
+    form.value.periodo_fim = fim
   }
 }
 
