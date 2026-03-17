@@ -45,6 +45,25 @@ function toBR(iso: string): string {
   return `${d}/${m}/${y}`
 }
 
+function calcularIdade(nascimento: Date | null): number | undefined {
+  if (!nascimento) return undefined
+  const hoje = new Date()
+  let anos = hoje.getFullYear() - nascimento.getFullYear()
+  const m = hoje.getMonth() - nascimento.getMonth()
+  if (m < 0 || (m === 0 && hoje.getDate() < nascimento.getDate())) anos--
+  return anos
+}
+
+function extrairSintese(conteudo: string): string {
+  // Tenta extrair a seção de síntese final; fallback: últimos 700 chars
+  const marcadores = ['SÍNTESE DE DESENVOLVIMENTO', 'Síntese de Desenvolvimento', 'síntese de desenvolvimento']
+  for (const m of marcadores) {
+    const idx = conteudo.lastIndexOf(m)
+    if (idx !== -1) return conteudo.slice(idx).slice(0, 900)
+  }
+  return conteudo.slice(-700)
+}
+
 export async function gerarDocumento(params: GenerateParams) {
   const { professor, tipo } = params
 
@@ -85,6 +104,23 @@ export async function gerarDocumento(params: GenerateParams) {
     alunoNome = aluno.nome
     turmaNome = aluno.turma.nome
     turmaId = aluno.turma_id
+
+    // Perfil do aluno
+    const alunoPerfil = {
+      idadeAnos: calcularIdade(aluno.data_nascimento),
+      necessidades: aluno.necessidades_educacionais ?? undefined,
+    }
+
+    // Último documento do mesmo tipo para este aluno (para contexto de progressão)
+    // O documento atual ainda não foi salvo, então o mais recente é sempre o anterior
+    const ultimoDoc = await prisma.rascunhoDocumento.findFirst({
+      where: { aluno_id: params.aluno_id, tipo: tipo as never },
+      orderBy: { created_at: 'desc' },
+      select: { conteudo_gerado: true },
+    })
+    const documentoAnterior = ultimoDoc?.conteudo_gerado
+      ? extrairSintese(ultimoDoc.conteudo_gerado)
+      : undefined
 
     const registros = await prisma.registroAluno.findMany({
       where: {
@@ -131,6 +167,8 @@ export async function gerarDocumento(params: GenerateParams) {
         bnccDescricoes,
         metodologiaTurma: contexto?.metodologia ?? undefined,
         dinamicaGrupo: contexto?.dinamica_grupo ?? undefined,
+        alunoPerfil,
+        documentoAnterior,
       })
     } else {
       // relatorio_individual — build combined context string for narrative
@@ -146,6 +184,8 @@ export async function gerarDocumento(params: GenerateParams) {
         registros: registrosMapped,
         bnccDescricoes,
         contexto: descricaoContexto,
+        alunoPerfil,
+        documentoAnterior,
       })
     }
   } else if (tipo === 'atividade_adaptada') {

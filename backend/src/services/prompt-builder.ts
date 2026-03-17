@@ -27,6 +27,11 @@ interface PortfolioRegistro {
   bncc_refs: string[]
 }
 
+interface AlunoPerfil {
+  idadeAnos?: number
+  necessidades?: string
+}
+
 interface PortfolioData {
   pseudo: string
   tipo: 'portfolio_semanal' | 'portfolio_mensal'
@@ -34,6 +39,8 @@ interface PortfolioData {
   bnccDescricoes: BnccMap
   metodologiaTurma?: string  // ContextoPedagogico.metodologia
   dinamicaGrupo?: string     // ContextoPedagogico.dinamica_grupo (grupos de suporte)
+  alunoPerfil?: AlunoPerfil
+  documentoAnterior?: string // Síntese do último documento gerado para este aluno
 }
 
 const DIAS_SEMANA: Record<number, string> = {
@@ -83,13 +90,21 @@ function buildOcorrenciasBlock(registros: PortfolioRegistro[]): string {
 }
 
 export function buildPromptPortfolio(dados: PortfolioData): string {
-  const { registros, bnccDescricoes, metodologiaTurma, dinamicaGrupo, tipo } = dados
+  const { registros, bnccDescricoes, metodologiaTurma, dinamicaGrupo, tipo, alunoPerfil, documentoAnterior } = dados
 
   const metodoSection = metodologiaTurma
     ? `\n**Metodologia da Turma:** ${metodologiaTurma}\n`
     : ''
   const dinamicaSection = dinamicaGrupo
     ? `\n**Dinâmica de Grupos (estratégias de mediação por perfil):** ${dinamicaGrupo}\n`
+    : ''
+
+  const perfilSection = alunoPerfil
+    ? `**Perfil do aluno:** ${alunoPerfil.idadeAnos != null ? `${alunoPerfil.idadeAnos} anos` : 'idade não informada'}. Necessidades educacionais especiais: ${alunoPerfil.necessidades || 'não especificadas'}.\n`
+    : ''
+
+  const anteriorSection = documentoAnterior
+    ? `**Desenvolvimento anterior (use como referência de progressão — NÃO copie, apenas demonstre evolução):**\n${documentoAnterior}\n\n`
     : ''
 
   let corpoRegistros: string
@@ -118,6 +133,10 @@ export function buildPromptPortfolio(dados: PortfolioData): string {
     instrucaoTipo = 'Portfólio Semanal de uma única semana, com cada dia detalhado e seção de justificativas ao final.'
   }
 
+  const instrucaoProgressao = documentoAnterior
+    ? '- Demonstre progressão em relação ao período anterior: cite avanços, novas conquistas ou desafios mantidos\n'
+    : ''
+
   return `Você é um assistente pedagógico especializado em Educação Especial e Atendimento Educacional Especializado (AEE), alinhado à Base Nacional Comum Curricular (BNCC).
 
 Gere o ${instrucaoTipo} para o aluno de referência "${dados.pseudo}". O portfólio deve:
@@ -125,11 +144,13 @@ Gere o ${instrucaoTipo} para o aluno de referência "${dados.pseudo}". O portfó
 - Para cada competência BNCC listada, explicar brevemente como a atividade a contemplou
 - NÃO mencionar nenhum nome real — use "o aluno" ou "a criança"
 - Reescrever a seção de MEDIAÇÃO de forma narrativa e pedagógica, respeitando os grupos de apoio e perfis descritos
-- Manter EXATAMENTE o formato de seções (cabeçalhos em **negrito**)
+- Mantenha as seções principais com cabeçalhos em **negrito**, mas escreva com fluidez narrativa
 - Incluir ao final a seção JUSTIFICATIVA / OCORRÊNCIAS com os eventos registrados
-- Escrever em Português Brasileiro formal
+- Considerar o perfil e as necessidades específicas do aluno ao calibrar linguagem e expectativas
+${instrucaoProgressao}- Escrever em Português Brasileiro formal
 ${metodoSection}${dinamicaSection}
-DADOS PEDAGÓGICOS (reescreva de forma narrativa e pedagógica):
+${perfilSection}
+${anteriorSection}DADOS PEDAGÓGICOS (reescreva de forma narrativa e pedagógica):
 
 ${corpoRegistros}
 
@@ -138,7 +159,7 @@ ${corpoRegistros}
 **SÍNTESE DE DESENVOLVIMENTO (AVDs)**
 [Escreva uma síntese do desenvolvimento observado no período: habilidades de comunicação, socialização, autonomia, coordenação motora e outras atividades de vida diária relevantes. Tom profissional e empático.]
 
-Portfólio (mantenha os cabeçalhos e seções, reescrevendo o conteúdo de forma narrativa e pedagógica):`
+Portfólio (mantenha as seções, reescrevendo o conteúdo de forma narrativa e pedagógica):`
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -157,6 +178,8 @@ interface RelatorioData {
   }>
   bnccDescricoes: BnccMap
   contexto?: string
+  alunoPerfil?: AlunoPerfil
+  documentoAnterior?: string
 }
 
 export function buildPromptRelatorio(dados: RelatorioData): string {
@@ -170,6 +193,18 @@ Objetivos: ${r.objetivos}
 Mediação: ${r.mediacoes}`
   }).join('\n\n---\n')
 
+  const perfilSection = dados.alunoPerfil
+    ? `**Perfil do aluno:** ${dados.alunoPerfil.idadeAnos != null ? `${dados.alunoPerfil.idadeAnos} anos` : 'idade não informada'}. Necessidades educacionais especiais: ${dados.alunoPerfil.necessidades || 'não especificadas'}.\n\n`
+    : ''
+
+  const anteriorSection = dados.documentoAnterior
+    ? `**Relatório anterior (use como referência de linha de base — NÃO copie, demonstre evolução):**\n${dados.documentoAnterior}\n\n`
+    : ''
+
+  const instrucaoProgressao = dados.documentoAnterior
+    ? '- Demonstre progressão em relação ao relatório anterior: cite avanços concretos, novas conquistas e desafios persistentes\n'
+    : ''
+
   return `Você é um assistente pedagógico especializado em Educação Especial e AEE, alinhado à BNCC.
 
 Gere um Relatório Individual consolidado para o aluno "${dados.pseudo}"${dados.periodoGeral ? ` referente ao período ${dados.periodoGeral}` : ''}. O relatório deve:
@@ -178,11 +213,12 @@ Gere um Relatório Individual consolidado para o aluno "${dados.pseudo}"${dados.
 - Para cada competência BNCC trabalhada, descrever como o aluno respondeu
 - Incluir uma seção sobre habilidades de vida diária (AVDs): comunicação, socialização, autonomia e atividades cotidianas
 - Descrever as estratégias de mediação utilizadas e sua efetividade
-- Usar linguagem profissional adequada para portfólio pedagógico e comunicação com família
+- Considerar o perfil e as necessidades específicas do aluno ao calibrar linguagem e expectativas
+${instrucaoProgressao}- Usar linguagem profissional adequada para portfólio pedagógico e comunicação com família
 - NÃO usar nomes reais — use "o aluno" ou "a criança"
 - Escrever em Português Brasileiro formal
 
-${dados.contexto ? `Contexto pedagógico da turma: ${dados.contexto}\n\n` : ''}Registros do período:
+${perfilSection}${anteriorSection}${dados.contexto ? `Contexto pedagógico da turma: ${dados.contexto}\n\n` : ''}Registros do período:
 ${registrosTexto}
 
 Relatório Individual:`
