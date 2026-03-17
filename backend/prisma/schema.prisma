@@ -66,6 +66,8 @@ model Professor {
   status           StatusProfessor @default(ativo)
   supabase_user_id String          @unique @db.Uuid
 
+  onboarding_concluido Boolean         @default(false)
+
   turmas    Turma[]
   rascunhos RascunhoDocumento[]
   versoes   VersaoDocumento[]

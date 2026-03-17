@@ -10,6 +10,8 @@ interface Professor {
   nome: string
   email: string
   papel: 'professor' | 'coordenador'
+  escola: string
+  onboarding_concluido: boolean
 }
 
 export const useAuthStore = defineStore('auth', () => {
@@ -38,8 +40,8 @@ export const useAuthStore = defineStore('auth', () => {
     if (!professor.value && data.session) {
       await createProfile(data.session)
     }
-    const redirect = (router.currentRoute.value.query.redirect as string) || '/'
-    await router.push(redirect)
+    const dest = resolvePostLoginRedirect()
+    await router.push(dest)
   }
 
   /** Registers a new user with email + password. Returns 'confirm-email' if confirmation is needed. */
@@ -55,8 +57,7 @@ export const useAuthStore = defineStore('auth', () => {
     if (data.session) {
       session.value = data.session
       await createProfile(data.session, nome)
-      const redirect = (router.currentRoute.value.query.redirect as string) || '/'
-      await router.push(redirect)
+      await router.push(resolvePostLoginRedirect())
       return 'ok'
     }
 
@@ -136,10 +137,14 @@ export const useAuthStore = defineStore('auth', () => {
         } catch {
           await createProfile(newSession)
         }
-        const redirect = (router.currentRoute.value.query.redirect as string) || '/'
-        await router.push(redirect)
+        await router.push(resolvePostLoginRedirect())
       }
     })
+  }
+
+  function resolvePostLoginRedirect(): string {
+    if (professor.value && !professor.value.onboarding_concluido) return '/onboarding'
+    return (router.currentRoute.value.query.redirect as string) || '/'
   }
 
   return { session, professor, isAuthenticated, papel, login, register, loginWithGoogle, logout, init, fetchProfessor }

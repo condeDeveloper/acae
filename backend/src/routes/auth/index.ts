@@ -34,7 +34,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
         where: { supabase_user_id },
         create: { supabase_user_id, nome, email, escola: body.escola ?? '' },
         update: {},
-        select: { id: true, nome: true, email: true, papel: true, escola: true },
+        select: { id: true, nome: true, email: true, papel: true, escola: true, onboarding_concluido: true },
       })
     } catch (e: unknown) {
       // P2002 = unique constraint violation (email already taken by different UID)
@@ -43,7 +43,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
         professor = await prisma.professor.update({
           where: { email },
           data: { supabase_user_id },
-          select: { id: true, nome: true, email: true, papel: true, escola: true },
+          select: { id: true, nome: true, email: true, papel: true, escola: true, onboarding_concluido: true },
         })
       } else {
         throw e
@@ -67,15 +67,32 @@ export default async function authRoutes(fastify: FastifyInstance) {
     },
     async (request) => {
       const p = request.professor
-      return {
-        id: p.id,
-        nome: p.nome,
-        email: p.email,
-        papel: p.papel,
-        escola: p.escola,
-      }
+      // Fetch full profile including onboarding_concluido (not in professor middleware by default)
+      const full = await prisma.professor.findUnique({
+        where: { id: p.id },
+        select: { id: true, nome: true, email: true, papel: true, escola: true, onboarding_concluido: true },
+      })
+      return full
     },
   )
+
+  /**
+   * PATCH /api/auth/onboarding
+   * Completes the onboarding: saves escola and marks onboarding_concluido = true.
+   */
+  fastify.patch('/api/auth/onboarding', async (request) => {
+    const p = request.professor
+    const body = request.body as { escola?: string }
+    const updated = await prisma.professor.update({
+      where: { id: p.id },
+      data: {
+        escola: body.escola ?? p.escola,
+        onboarding_concluido: true,
+      },
+      select: { id: true, nome: true, email: true, papel: true, escola: true, onboarding_concluido: true },
+    })
+    return updated
+  })
 
   /**
    * POST /api/auth/logout

@@ -12,6 +12,13 @@ const router = createRouter({
         { path: '', name: 'login', component: () => import('@/pages/LoginPage.vue') },
       ],
     },
+    // Onboarding (authenticated but outside AppLayout)
+    {
+      path: '/onboarding',
+      name: 'onboarding',
+      component: () => import('@/pages/OnboardingPage.vue'),
+      meta: { requiresAuth: true },
+    },
     // Protected routes
     {
       path: '/',
@@ -44,6 +51,16 @@ router.beforeEach(async (to) => {
 
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
     return { path: '/login', query: { redirect: to.fullPath } }
+  }
+
+  // Redirect to onboarding if not completed yet (skip if already going there)
+  if (
+    authStore.isAuthenticated &&
+    authStore.professor &&
+    !authStore.professor.onboarding_concluido &&
+    to.name !== 'onboarding'
+  ) {
+    return { path: '/onboarding' }
   }
 
   if (to.meta.role === 'coordenador' && authStore.papel !== 'coordenador') {
