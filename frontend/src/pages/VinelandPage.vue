@@ -1,27 +1,28 @@
 <template>
   <div class="page-container">
-    <div class="filtro-bar" style="justify-content: flex-end">
-      <Button
-        v-if="!mostrarFormulario"
-        label="Nova Avaliação"
-        icon="pi pi-plus"
-        @click="abrirNova"
-      />
-      <Button
-        v-if="mostrarFormulario"
-        label="Cancelar"
-        icon="pi pi-times"
-        severity="secondary"
-        outlined
-        @click="fecharFormulario"
-      />
-    </div>
-
     <div class="vineland-layout">
       <!-- ── Coluna Esquerda: Filtros + Lista ── -->
       <div class="lista-panel">
         <div class="filtros-card">
-          <h3 class="filtros-titulo"><i class="pi pi-filter" /> Filtros</h3>
+          <div class="filtros-header">
+            <h3 class="filtros-titulo"><i class="pi pi-filter" /> Filtros</h3>
+            <Button
+              v-if="!mostrarFormulario"
+              label="Nova Avaliação"
+              icon="pi pi-plus"
+              size="small"
+              @click="abrirNova"
+            />
+            <Button
+              v-if="mostrarFormulario"
+              label="Cancelar"
+              icon="pi pi-times"
+              severity="secondary"
+              outlined
+              size="small"
+              @click="fecharFormulario"
+            />
+          </div>
 
           <div class="field">
             <label>Turma</label>
@@ -800,7 +801,7 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.page-container { padding: 1.5rem; display: flex; flex-direction: column; gap: 0.75rem; }
+.page-container { padding: 0; display: flex; flex-direction: column; gap: 0.75rem; }
 
 .vineland-layout {
   display: grid;
@@ -816,6 +817,13 @@ onMounted(async () => {
   border-radius: 10px;
   padding: 1.25rem;
 }
+.filtros-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+.filtros-header .filtros-titulo { margin-bottom: 0; }
 .filtros-titulo, .form-titulo {
   font-size: 0.95rem;
   font-weight: 700;
