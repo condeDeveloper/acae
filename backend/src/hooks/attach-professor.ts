@@ -22,7 +22,8 @@ export default fp(async function attachProfessorPlugin(fastify: FastifyInstance)
       request.method === 'OPTIONS' ||
       request.url.startsWith('/api/downloads/') ||
       request.url === '/health' ||
-      request.url === '/api/auth/register'
+      request.url === '/api/auth/register' ||
+      !request.url.startsWith('/api/')  // arquivos estáticos do frontend
     ) return
 
     try {
