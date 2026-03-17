@@ -1,13 +1,15 @@
 import { config } from 'dotenv'
-import { resolve } from 'path'
+import { resolve, join } from 'path'
 import { fileURLToPath } from 'url'
 import { dirname } from 'path'
+import { existsSync } from 'fs'
 
 // Carrega .env da raiz do monorepo (um nível acima do backend/)
 const __dirname = dirname(fileURLToPath(import.meta.url))
 config({ path: resolve(__dirname, '../../.env') })
 import Fastify from 'fastify'
 import cors from '@fastify/cors'
+import staticPlugin from '@fastify/static'
 import prismaPlugin from './plugins/prisma.js'
 import authPlugin from './plugins/auth.js'
 import errorHandlerPlugin from './plugins/error-handler.js'
@@ -71,6 +73,21 @@ async function build() {
 
   // Health check (sem auth)
   fastify.get('/health', async () => ({ status: 'ok', timestamp: new Date().toISOString() }))
+
+  // Servir frontend estático (produção)
+  const publicDir = join(__dirname, '..', 'public')
+  if (existsSync(publicDir)) {
+    await fastify.register(staticPlugin, {
+      root: publicDir,
+      prefix: '/',
+      // SPA fallback: rotas desconhecidas retornam index.html
+      index: 'index.html',
+    })
+    // Fallback para client-side routing do Vue Router
+    fastify.setNotFoundHandler((_req, reply) => {
+      reply.sendFile('index.html')
+    })
+  }
 
   return fastify
 }
