@@ -3,13 +3,13 @@ set -e
 
 echo "📦 Instalando dependências do frontend..."
 cd frontend
-npm install
+npm install --include=dev
 echo "🔨 Buildando frontend..."
 npm run build
 
 echo "📦 Instalando dependências do backend..."
 cd ../backend
-npm install
+npm install --include=dev
 echo "🔨 Copiando dist do frontend para backend/public..."
 rm -rf public
 cp -r ../frontend/dist public
