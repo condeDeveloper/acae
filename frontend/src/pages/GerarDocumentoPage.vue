@@ -49,19 +49,12 @@
           <div class="field" v-if="precisaDeDatas">
             <label>
               Período Fim
-              <Tag v-if="tipoFixoPeriodo && form.periodo_fim" :value="labelPeriodoAutoFim" severity="info" />
-              <Tag v-else-if="!tipoFixoPeriodo && labelDias(form.periodo_fim)" :value="labelDias(form.periodo_fim)" severity="warn" />
+              <Tag v-if="form.periodo_fim" :value="labelPeriodoAutoFim" severity="info" />
             </label>
-            <DatePicker
-              v-model="form.periodo_fim"
-              dateFormat="dd/mm/yy"
-              fluid
-              showIcon
-              :disabled="tipoFixoPeriodo"
-              :maxDate="tipoFixoPeriodo ? undefined : hoje"
-              :minDate="tipoFixoPeriodo ? undefined : (form.periodo_inicio ?? undefined)"
-              @update:modelValue="onFimChange"
-            />
+            <div class="periodo-fim-locked">
+              <i class="pi pi-lock" />
+              <span>{{ form.periodo_fim ? form.periodo_fim.toLocaleDateString('pt-BR') : 'calculado automaticamente' }}</span>
+            </div>
           </div>
 
           <div class="field">
@@ -304,7 +297,7 @@ function onFimChange(_val: Date | null) {
   // noop para semanal/mensal (fim é sempre auto-calculado)
 }
 
-// Ao mudar início: auto-calcula fim para semanal/mensal
+// Ao mudar início: auto-calcula fim para todos os tipos
 function onInicioChange(val: Date | null) {
   if (!val) return
   if (form.value.tipo === 'portfolio_semanal') {
@@ -316,6 +309,8 @@ function onInicioChange(val: Date | null) {
     fim.setMonth(fim.getMonth() + 1)
     fim.setDate(fim.getDate() - 1) // último dia do mês
     form.value.periodo_fim = fim
+  } else {
+    form.value.periodo_fim = new Date(val) // relatorio_individual: fim = início
   }
 }
 
@@ -454,6 +449,24 @@ async function finalizar() {
   flex-direction: column;
   gap: 0.375rem;
   margin-bottom: 1rem;
+}
+.periodo-fim-locked {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: #F0F4F8;
+  border: 1px solid var(--border-hover);
+  border-radius: 10px;
+  color: var(--text-3);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: not-allowed;
+  user-select: none;
+}
+.periodo-fim-locked .pi-lock {
+  font-size: 0.8rem;
+  opacity: 0.6;
 }
 .field label {
   font-size: 0.875rem;

@@ -1,9 +1,8 @@
 <template>
-  <Teleport to="#page-action-portal" defer>
-    <Button label="Nova Turma" icon="pi pi-plus" @click="abrirDialogNova" />
-  </Teleport>
-
   <div class="page-container">
+    <div class="filtro-bar" style="justify-content: flex-end">
+      <Button label="Nova Turma" icon="pi pi-plus" @click="abrirDialogNova" />
+    </div>
     <!-- Empty state quando não há turmas -->
     <div v-if="!loading && turmas.length === 0" class="empty-state">
       <i class="pi pi-graduation-cap empty-icon" />

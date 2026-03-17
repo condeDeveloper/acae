@@ -5,7 +5,7 @@
     <!-- Combined content header: title (left) | nav (center) | action btn (right) -->
     <div class="content-header">
       <div class="content-header__left">
-        <h2 class="ch-title" v-if="pageLayout.title.value">{{ pageLayout.title.value }}</h2>
+        <h2 :class="['ch-title', route.path === '/documentos' ? 'ch-title--compact' : '']" v-if="pageLayout.title.value">{{ pageLayout.title.value }}</h2>
         <p class="ch-subtitle" v-if="pageLayout.subtitle.value">{{ pageLayout.subtitle.value }}</p>
       </div>
 
@@ -108,6 +108,13 @@ const navItems = [
   letter-spacing: -0.02em;
   font-family: 'Nunito', sans-serif;
   line-height: 1.2;
+  white-space: nowrap;
+}
+.ch-title--compact {
+  font-size: 0.95rem !important;
+  letter-spacing: -0.01em !important;
+}
+.ch-title {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

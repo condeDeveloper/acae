@@ -1,24 +1,21 @@
 <template>
   <div class="page-container">
-    <!-- Teleport action buttons to header portal -->
-    <Teleport to="#page-action-portal" defer>
-      <div class="header-actions">
-        <Button
-          v-if="!mostrarFormulario"
-          label="Nova Avaliação"
-          icon="pi pi-plus"
-          @click="abrirNova"
-        />
-        <Button
-          v-if="mostrarFormulario"
-          label="Cancelar"
-          icon="pi pi-times"
-          severity="secondary"
-          outlined
-          @click="fecharFormulario"
-        />
-      </div>
-    </Teleport>
+    <div class="filtro-bar" style="justify-content: flex-end">
+      <Button
+        v-if="!mostrarFormulario"
+        label="Nova Avaliação"
+        icon="pi pi-plus"
+        @click="abrirNova"
+      />
+      <Button
+        v-if="mostrarFormulario"
+        label="Cancelar"
+        icon="pi pi-times"
+        severity="secondary"
+        outlined
+        @click="fecharFormulario"
+      />
+    </div>
 
     <div class="vineland-layout">
       <!-- ── Coluna Esquerda: Filtros + Lista ── -->
@@ -803,7 +800,7 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.page-container { padding: 1.5rem; }
+.page-container { padding: 1.5rem; display: flex; flex-direction: column; gap: 0.75rem; }
 
 .vineland-layout {
   display: grid;

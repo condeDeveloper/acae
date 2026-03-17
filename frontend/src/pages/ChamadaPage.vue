@@ -1,33 +1,5 @@
 <template>
   <div class="page-container">
-    <!-- Teleport action buttons to header portal -->
-    <Teleport to="#page-action-portal" defer>
-      <div class="header-actions">
-        <Button
-          v-if="chamada && (modoEdicao || !chamada.bloqueada)"
-          label="Salvar Chamada"
-          icon="pi pi-save"
-          severity="success"
-          :loading="salvando"
-          @click="salvarChamada"
-        />
-        <Button
-          v-if="chamada && chamada.bloqueada && !modoEdicao"
-          label="Editar"
-          icon="pi pi-pencil"
-          severity="secondary"
-          @click="modoEdicao = true"
-        />
-        <Button
-          label="Histórico"
-          icon="pi pi-history"
-          severity="secondary"
-          outlined
-          @click="abrirHistorico"
-        />
-      </div>
-    </Teleport>
-
     <!-- Controls bar -->
     <div class="controls-bar">
       <div class="control-field">
@@ -58,6 +30,37 @@
 
       <Tag v-if="chamada?.bloqueada && !modoEdicao" value="Registro passado — somente leitura" severity="warn" />
       <Tag v-if="chamada && !chamada.bloqueada" value="Hoje" severity="success" />
+
+      <span
+        v-if="chamada && chamada.presencas.length > 0 && (modoEdicao || !chamada.bloqueada)"
+        v-tooltip.top="temNeutros ? 'Existem alunos sem presença registrada' : undefined"
+        style="margin-left: auto; display: inline-flex;"
+      >
+        <Button
+          label="Salvar"
+          icon="pi pi-save"
+          severity="success"
+          :disabled="temNeutros"
+          :loading="salvando"
+          @click="salvarChamada"
+        />
+      </span>
+      <Button
+        v-if="chamada && chamada.presencas.length > 0 && chamada.bloqueada && !modoEdicao"
+        label="Editar"
+        icon="pi pi-pencil"
+        severity="secondary"
+        style="margin-left: auto"
+        @click="modoEdicao = true"
+      />
+      <Button
+        label="Histórico"
+        icon="pi pi-history"
+        severity="secondary"
+        outlined
+        :style="{ marginLeft: chamada ? '0' : 'auto' }"
+        @click="abrirHistorico"
+      />
     </div>
 
     <!-- Loading state -->
@@ -333,6 +336,7 @@ const dataFormatada = computed(() => {
 
 const countPresentes = computed(() => chamada.value?.presencas.filter((p) => p.presente).length ?? 0)
 const countAusentes = computed(() => chamada.value?.presencas.filter((p) => !p.presente).length ?? 0)
+const temNeutros = computed(() => chamada.value?.presencas.some((p) => !esTocado(p.aluno_id)) ?? false)
 
 function iniciais(nome: string): string {
   return nome.split(' ').filter(Boolean).slice(0, 2).map((n) => n[0].toUpperCase()).join('')
@@ -391,6 +395,10 @@ async function carregarChamada() {
 
 async function salvarChamada() {
   if (!chamada.value) return
+  if (temNeutros.value) {
+    toast.add({ severity: 'warn', summary: 'Existem alunos sem presença registrada', life: 3000 })
+    return
+  }
   salvando.value = true
   try {
     const dataStr = toDateStr(dataSelecionada.value)
@@ -501,11 +509,8 @@ watch(turmaSelecionada, () => {
   align-items: flex-end;
   gap: 1.25rem;
   flex-wrap: wrap;
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 1rem 1.25rem;
 }
+
 .control-field {
   display: flex;
   flex-direction: column;
@@ -517,11 +522,6 @@ watch(turmaSelecionada, () => {
   color: var(--text-2);
   letter-spacing: 0.04em;
   text-transform: uppercase;
-}
-.header-actions {
-  display: flex;
-  gap: 0.5rem;
-  align-items: center;
 }
 
 /* ── Loading / empty ── */

@@ -473,6 +473,18 @@ body {
   font-weight: 700 !important;
 }
 
+/* ── Filtro bar (global) ── */
+.filtro-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+}
+@media (max-width: 768px) {
+  .filtro-bar { gap: 0.5rem; }
+}
+
 /* ── Empty state (global) ── */
 .empty-state {
   display: flex;

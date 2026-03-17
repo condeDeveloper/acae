@@ -1,8 +1,4 @@
 <template>
-  <Teleport to="#page-action-portal" defer>
-    <Button label="Novo Aluno" icon="pi pi-plus" @click="abrirDialogNovo" />
-  </Teleport>
-
   <div class="page-container">
     <!-- Filtro: Todos / Por Turma -->
     <div class="filtro-bar">
@@ -27,6 +23,8 @@
           transition: 'opacity 0.2s'
         }"
       />
+
+      <Button label="Novo Aluno" icon="pi pi-plus" style="margin-left: auto" @click="abrirDialogNovo" />
     </div>
 
     <!-- Empty state quando não há alunos -->
@@ -380,14 +378,6 @@ onMounted(() => trackLoad(Promise.all([carregarTurmas(), carregarAlunos()])))
 }
 .page-header p { margin: 0; color: var(--text-2); font-size: 0.9rem; font-weight: 600; }
 
-/* ── Filtro bar ── */
-.filtro-bar {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 1.25rem;
-  flex-wrap: wrap;
-}
 /* Switch estilo iOS */
 .modo-switch { display: flex; align-items: center; gap: 0.625rem; cursor: pointer; user-select: none; }
 .sw-opt { font-size: 0.875rem; font-weight: 700; color: var(--text-2); transition: color 0.2s; font-family: 'Nunito', sans-serif; }
@@ -473,9 +463,6 @@ onMounted(() => trackLoad(Promise.all([carregarTurmas(), carregarAlunos()])))
   color: var(--text-3);
 }
 
-@media (max-width: 768px) {
-  .filtro-bar { flex-wrap: wrap; gap: 0.5rem; }
-}
 
 /* ── Empty state ── */
 .empty-state {

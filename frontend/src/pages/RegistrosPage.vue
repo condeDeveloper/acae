@@ -1,8 +1,4 @@
 <template>
-  <Teleport to="#page-action-portal" defer>
-    <Button label="Novo Registro" icon="pi pi-plus" @click="abrirDialogNovo" />
-  </Teleport>
-
   <div class="page-container">
     <!-- Filtro: Todos / Por Turma -->
     <div class="filtro-bar">
@@ -46,6 +42,8 @@
           />
         </div>
       </template>
+
+      <Button label="Novo Registro" icon="pi pi-plus" style="margin-left: auto" @click="abrirDialogNovo" />
     </div>
 
     <!-- Tabela -->
