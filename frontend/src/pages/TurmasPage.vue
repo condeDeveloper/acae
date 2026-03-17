@@ -11,8 +11,8 @@
       <p class="empty-sub">Clique em "Nova Turma" para começar a organizar seus alunos</p>
     </div>
 
+    <div v-else class="table-scroll-wrapper">
     <DataTable
-      v-else
       :value="turmas"
       :loading="loading"
       stripedRows
@@ -24,9 +24,10 @@
       :rowsPerPageOptions="[10, 25, 50]"
       emptyMessage="Nenhuma turma cadastrada. Clique em 'Nova Turma' para começar."
       class="cursor-pointer-rows"
+      style="min-width: 600px"
       @row-click="abrirCard($event.data)"
     >
-      <Column field="nome" header="Nome da Turma" sortable />
+      <Column field="nome" header="Nome da Turma" sortable style="min-width: 140px" />
       <Column field="ano_letivo" header="Ano Letivo" sortable />
       <Column field="turno" header="Turno" sortable>
         <template #body="{ data }">
@@ -63,6 +64,7 @@
         </template>
       </Column>
     </DataTable>
+    </div>
 
     <!-- Card Turma -->
     <Dialog v-model:visible="cardVisible" header="Detalhes da Turma" modal :style="{ width: '400px' }">
@@ -336,6 +338,13 @@ onMounted(() => trackLoad(carregar()))
 }
 :deep(tr:hover .stack-img) {
   transform: scale(1.15);
+}
+
+/* ── Mobile: scroll horizontal na tabela ── */
+.table-scroll-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  width: 100%;
 }
 
 /* ── Empty state ── */

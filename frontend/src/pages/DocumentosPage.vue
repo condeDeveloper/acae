@@ -1,5 +1,6 @@
 <template>
   <div class="page-container">
+    <div class="table-scroll-wrapper">
     <DataTable
       :value="documentos"
       :loading="loading"
@@ -10,6 +11,7 @@
       :sortOrder="-1"
       emptyMessage="Nenhum documento encontrado"
       class="cursor-pointer-rows"
+      style="min-width: 520px"
       @row-click="abrirDownload($event.data)"
     >
       <Column field="aluno_nome" header="Aluno" sortable style="width:25%" />
@@ -28,6 +30,7 @@
         </template>
       </Column>
     </DataTable>
+    </div>
 
     <!-- Dialog pequeno: selecionar formato -->
     <Dialog v-model:visible="formatoVisible" header="Selecione o formato" modal :style="{ width: '280px' }">
@@ -118,6 +121,7 @@ onMounted(() => {
 <style scoped>
 .page-container { padding: 1rem; }
 .page-header { margin-bottom: 1.5rem; }
+.table-scroll-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%; }
 .page-header h2 { margin: 0 0 0.25rem; font-size: 1.75rem; font-weight: 900; font-family: 'Nunito', sans-serif; color: var(--text-1); }
 .page-header p { margin: 0; color: var(--text-2); }
 .doc-info { display: flex; flex-direction: column; gap: 0.875rem; padding: 0.25rem 0; }

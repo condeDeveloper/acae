@@ -246,5 +246,53 @@ const navItems = [
 .page-overlay-leave-to {
   opacity: 0;
 }
+
+/* ── Mobile responsive ── */
+@media (max-width: 768px) {
+  .content-header {
+    padding: 0 0.75rem;
+    height: 56px;
+  }
+  .content-header__left {
+    flex: 0 1 auto;
+    width: auto;
+    min-width: 0;
+    max-width: 110px;
+  }
+  .ch-title {
+    font-size: 0.9rem;
+  }
+  .ch-subtitle {
+    display: none;
+  }
+  .content-header__nav {
+    overflow-x: auto;
+    overflow-y: visible;
+    justify-content: flex-start;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .content-header__nav::-webkit-scrollbar {
+    display: none;
+  }
+  .ch-nav-list {
+    flex-wrap: nowrap;
+  }
+  .ch-link {
+    min-width: 52px;
+    padding: 0.4rem 0.5rem 0.5rem;
+    font-size: 0.95rem;
+  }
+  .ch-link__label {
+    font-size: 0.58rem;
+  }
+  .content-header__right {
+    flex: 0 0 auto;
+    width: auto;
+  }
+  .main-content {
+    padding: 0.75rem;
+  }
+}
 </style>
 

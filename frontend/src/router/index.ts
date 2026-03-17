@@ -4,6 +4,8 @@ import { useAuthStore } from '@/stores/auth'
 const router = createRouter({
   history: createWebHistory(),
   routes: [
+    // Landing page (public)
+    { path: '/', name: 'landing', component: () => import('@/pages/LandingPage.vue') },
     // Public routes
     {
       path: '/login',
@@ -25,7 +27,7 @@ const router = createRouter({
       component: () => import('@/layouts/AppLayout.vue'),
       meta: { requiresAuth: true },
       children: [
-        { path: '', name: 'dashboard', redirect: '/turmas' },
+        { path: '', name: 'dashboard', redirect: '/turmas', meta: { requiresAuth: true } },
         { path: 'turmas', name: 'turmas', component: () => import('@/pages/TurmasPage.vue') },
         { path: 'alunos', name: 'alunos', component: () => import('@/pages/AlunosPage.vue') },
         { path: 'registros', name: 'registros', component: () => import('@/pages/RegistrosPage.vue'), meta: { requiresAuth: true } },
@@ -51,6 +53,11 @@ router.beforeEach(async (to) => {
 
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
     return { path: '/login', query: { redirect: to.fullPath } }
+  }
+
+  // Authenticated + onboarding done + landing → go to app
+  if (authStore.isAuthenticated && authStore.professor?.onboarding_concluido && to.name === 'landing') {
+    return { path: '/turmas' }
   }
 
   // Redirect to onboarding if not completed yet (skip if already going there)

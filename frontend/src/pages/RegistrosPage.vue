@@ -43,6 +43,7 @@
     </div>
 
     <!-- Tabela -->
+    <div class="table-scroll-wrapper">
     <DataTable
       :value="registros"
       :loading="loading"
@@ -55,6 +56,7 @@
       :rows="10"
       :rowsPerPageOptions="[10, 25, 50]"
       class="cursor-pointer-rows"
+      style="min-width: 600px"
       @row-click="abrirCard($event.data)"
     >
       <Column v-if="modoFiltro === 'todos'" field="aluno_nome" header="Aluno" sortable>
@@ -96,6 +98,7 @@
         </template>
       </Column>
     </DataTable>
+    </div>
 
     <!-- Card Registro -->
     <Dialog v-model:visible="cardVisible" header="Detalhes do Registro" modal :style="{ width: '520px' }">
@@ -676,4 +679,11 @@ onMounted(() => trackLoad((async () => {
 .card-label { font-size: 0.75rem; font-weight: 600; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.05em; }
 .card-valor { font-size: 0.9375rem; color: var(--text-1); white-space: pre-wrap; }
 :deep(.cursor-pointer-rows .p-datatable-tbody > tr) { cursor: pointer; }
+
+/* ── Mobile: scroll horizontal na tabela ── */
+.table-scroll-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  width: 100%;
+}
 </style>

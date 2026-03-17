@@ -144,7 +144,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   function resolvePostLoginRedirect(): string {
     if (professor.value && !professor.value.onboarding_concluido) return '/onboarding'
-    return (router.currentRoute.value.query.redirect as string) || '/'
+    return (router.currentRoute.value.query.redirect as string) || '/turmas'
   }
 
   return { session, professor, isAuthenticated, papel, login, register, loginWithGoogle, logout, init, fetchProfessor }

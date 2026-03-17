@@ -36,8 +36,8 @@
       <p class="empty-sub">Adicione alunos clicando em "Novo Aluno" ou ajuste o filtro de turma</p>
     </div>
 
+    <div v-else class="table-scroll-wrapper">
     <DataTable
-      v-else
       :value="alunosFiltrados"
       :loading="loading"
       stripedRows
@@ -48,6 +48,7 @@
       :rows="10"
       :rowsPerPageOptions="[10, 25, 50]"
       class="cursor-pointer-rows"
+      style="min-width: 560px"
       @row-click="abrirCard($event.data)"
     >
       <Column field="nome" header="Nome" sortable>
@@ -79,6 +80,7 @@
         </template>
       </Column>
     </DataTable>
+    </div>
 
     <!-- Card Aluno -->
     <Dialog v-model:visible="cardVisible" header="Detalhes do Aluno" modal :style="{ width: '420px' }">
@@ -458,6 +460,16 @@ onMounted(() => trackLoad(Promise.all([carregarTurmas(), carregarAlunos()])))
   justify-content: center;
   font-size: 2.5rem;
   color: var(--text-3);
+}
+
+/* ── Mobile: scroll horizontal na tabela ── */
+.table-scroll-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  width: 100%;
+}
+@media (max-width: 768px) {
+  .filtro-bar { flex-wrap: wrap; gap: 0.5rem; }
 }
 
 /* ── Empty state ── */
