@@ -62,7 +62,6 @@ const navItems = [
   { to: '/alunos',           label: 'Alunos',    icon: 'pi pi-user' },
   { to: '/registros',        label: 'Registros', icon: 'pi pi-book' },
   { to: '/documentos/gerar', label: 'Gerar',     icon: 'pi pi-file-edit' },
-  { to: '/documentos',       label: 'Histórico', icon: 'pi pi-file' },
   { to: '/chamada',          label: 'Chamada',   icon: 'pi pi-calendar-clock' },
   { to: '/atividades',       label: 'Atividades', icon: 'pi pi-th-large' },
   { to: '/ocorrencias',      label: 'Ocorrências', icon: 'pi pi-megaphone' },

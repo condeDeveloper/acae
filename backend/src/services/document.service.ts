@@ -67,9 +67,9 @@ function extrairSintese(conteudo: string): string {
 export async function gerarDocumento(params: GenerateParams) {
   const { professor, tipo } = params
 
-  // Validate BNCC refs
-  if (!params.bncc_refs || params.bncc_refs.length === 0) {
-    const err = new Error('Pelo menos uma competência BNCC é obrigatória para gerar o documento.')
+  // BNCC obrigatório apenas para atividade_adaptada; demais tipos inferem dos registros
+  if (tipo === 'atividade_adaptada' && (!params.bncc_refs || params.bncc_refs.length === 0)) {
+    const err = new Error('Pelo menos uma competência BNCC é obrigatória para atividade adaptada.')
     ;(err as Error & { statusCode: number }).statusCode = 422
     throw err
   }
@@ -83,6 +83,7 @@ export async function gerarDocumento(params: GenerateParams) {
   let turmaNome = ''
   let alunoNome = ''
   let pseudo = ''
+  let bnccRefsParaSalvar: string[] = []
 
   if (tipo === 'portfolio_semanal' || tipo === 'portfolio_mensal' || tipo === 'relatorio_individual') {
     if (!params.aluno_id) throw Object.assign(new Error('aluno_id obrigatório'), { statusCode: 400 })
@@ -147,6 +148,7 @@ export async function gerarDocumento(params: GenerateParams) {
 
     // Fetch BNCC descriptions for all codes present in the registros
     const allCodes = Array.from(new Set(registros.flatMap(r => r.bncc_refs as string[])))
+    bnccRefsParaSalvar = allCodes
     const bnccDescricoes = await fetchBnccDescricoes(allCodes)
 
     pseudo = pseudonymize()
@@ -214,6 +216,7 @@ export async function gerarDocumento(params: GenerateParams) {
     turmaId = alunos[0]?.turma_id ?? ''
 
     // Fetch BNCC descriptions
+    bnccRefsParaSalvar = params.bncc_refs ?? []
     const bnccDescricoes = await fetchBnccDescricoes(params.bncc_refs ?? [])
 
     const pseudo = pseudonymize()
@@ -278,6 +281,7 @@ export async function gerarDocumento(params: GenerateParams) {
       ...(params.bncc_refs ?? []),
       ...registros.flatMap(r => r.bncc_refs as string[]),
     ]))
+    bnccRefsParaSalvar = allCodes
     const bnccDescricoes = await fetchBnccDescricoes(allCodes)
 
     // Pseudonymize each student consistently across their registros
@@ -327,7 +331,7 @@ export async function gerarDocumento(params: GenerateParams) {
       tipo: tipo as any,
       status: 'rascunho',
       conteudo_gerado: conteudoGerado,
-      bncc_refs: params.bncc_refs ?? [],
+      bncc_refs: bnccRefsParaSalvar,
       periodo,
       prompt_hash: createHash('sha256').update(prompt).digest('hex'),
     },
