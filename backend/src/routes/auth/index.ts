@@ -1,6 +1,16 @@
 import type { FastifyInstance } from 'fastify'
 import { prisma } from '../../plugins/prisma.js'
 
+const PROFESSOR_SELECT = {
+  id: true,
+  nome: true,
+  email: true,
+  papel: true,
+  escola: true,
+  onboarding_concluido: true,
+  avatar_id: true,
+} as const
+
 export default async function authRoutes(fastify: FastifyInstance) {
   /**
    * POST /api/auth/register
@@ -26,24 +36,21 @@ export default async function authRoutes(fastify: FastifyInstance) {
     const email = (payload.email as string | undefined) ?? ''
     const supabase_user_id = payload.sub
 
-    // Upsert by supabase_user_id. If email already exists with a different UID
-    // (e.g. seeded/migrated account), re-link by updating the supabase_user_id.
     let professor
     try {
       professor = await prisma.professor.upsert({
         where: { supabase_user_id },
         create: { supabase_user_id, nome, email, escola: body.escola ?? '' },
         update: {},
-        select: { id: true, nome: true, email: true, papel: true, escola: true, onboarding_concluido: true },
+        select: PROFESSOR_SELECT,
       })
     } catch (e: unknown) {
-      // P2002 = unique constraint violation (email already taken by different UID)
       const prismaErr = e as { code?: string }
       if (prismaErr?.code === 'P2002' && email) {
         professor = await prisma.professor.update({
           where: { email },
           data: { supabase_user_id },
-          select: { id: true, nome: true, email: true, papel: true, escola: true, onboarding_concluido: true },
+          select: PROFESSOR_SELECT,
         })
       } else {
         throw e
@@ -56,7 +63,6 @@ export default async function authRoutes(fastify: FastifyInstance) {
   /**
    * GET /api/auth/me
    * Returns the authenticated professor's profile.
-   * Rate limited to 60 requests / 15 min (allows multiple tabs and page refreshes).
    */
   fastify.get(
     '/api/auth/me',
@@ -74,6 +80,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
         papel: p.papel,
         escola: p.escola,
         onboarding_concluido: p.onboarding_concluido,
+        avatar_id: p.avatar_id,
       }
     },
   )
@@ -91,7 +98,26 @@ export default async function authRoutes(fastify: FastifyInstance) {
         escola: body.escola ?? p.escola,
         onboarding_concluido: true,
       },
-      select: { id: true, nome: true, email: true, papel: true, escola: true, onboarding_concluido: true },
+      select: PROFESSOR_SELECT,
+    })
+    return updated
+  })
+
+  /**
+   * PATCH /api/auth/perfil
+   * Updates professor profile: nome, escola, avatar_id.
+   */
+  fastify.patch('/api/auth/perfil', async (request) => {
+    const p = request.professor
+    const body = request.body as { nome?: string; escola?: string; avatar_id?: number | null }
+    const updated = await prisma.professor.update({
+      where: { id: p.id },
+      data: {
+        nome: body.nome ?? p.nome,
+        escola: body.escola ?? p.escola,
+        avatar_id: body.avatar_id !== undefined ? body.avatar_id : p.avatar_id,
+      },
+      select: PROFESSOR_SELECT,
     })
     return updated
   })
@@ -99,7 +125,6 @@ export default async function authRoutes(fastify: FastifyInstance) {
   /**
    * POST /api/auth/logout
    * Stateless logout — JWT is invalidated by Supabase client.
-   * Backend just acknowledges.
    */
   fastify.post('/api/auth/logout', async (_request, reply) => {
     return reply.code(204).send()

@@ -53,14 +53,6 @@
         style="margin-left: auto"
         @click="modoEdicao = true"
       />
-      <Button
-        label="Histórico"
-        icon="pi pi-history"
-        severity="secondary"
-        outlined
-        :style="{ marginLeft: chamada ? '0' : 'auto' }"
-        @click="abrirHistorico"
-      />
     </div>
 
     <!-- Loading state -->
@@ -175,30 +167,14 @@
       </div>
     </div>
 
-    <!-- Histórico Dialog -->
-    <Dialog
-      v-model:visible="historicoVisivel"
-      header="Histórico de Chamadas"
-      :modal="true"
-      :style="{ width: '800px', maxWidth: '95vw' }"
-      :closable="true"
-    >
-      <div class="historico-controls">
-        <div class="control-field">
-          <label>Turma</label>
-          <Dropdown
-            v-model="historicoTurmaId"
-            :options="turmas"
-            optionLabel="nome"
-            optionValue="id"
-            placeholder="Selecione a turma"
-            style="min-width: 220px"
-            @change="carregarHistorico"
-          />
-        </div>
-      </div>
+    <!-- Histórico das últimas chamadas -->
+    <div v-if="turmaSelecionada" class="historico-section">
+      <h4 class="historico-title">
+        <i class="pi pi-history" />
+        Últimas chamadas
+      </h4>
 
-      <div v-if="loadingHistorico" class="loading-card">
+      <div v-if="loadingHistorico" class="loading-card small">
         <i class="pi pi-spin pi-spinner" />
         <span>Carregando histórico...</span>
       </div>
@@ -208,8 +184,6 @@
         :value="historico"
         class="historico-table"
         stripedRows
-        :rows="20"
-        paginator
       >
         <Column field="data" header="Data" sortable>
           <template #body="{ data }">
@@ -250,15 +224,11 @@
         </Column>
       </DataTable>
 
-      <div v-else-if="historicoTurmaId && !loadingHistorico" class="empty-card small">
+      <div v-else class="empty-card small">
         <i class="pi pi-inbox" />
         <p>Nenhuma chamada registrada para esta turma</p>
       </div>
-      <div v-else-if="!historicoTurmaId" class="empty-card small">
-        <i class="pi pi-arrow-up" />
-        <p>Selecione uma turma para ver o histórico</p>
-      </div>
-    </Dialog>
+    </div>
   </div>
 </template>
 
@@ -267,7 +237,6 @@ import { ref, computed, onMounted, watch } from 'vue'
 import Dropdown from 'primevue/dropdown'
 import DatePicker from 'primevue/datepicker'
 import Button from 'primevue/button'
-import Dialog from 'primevue/dialog'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import Tag from 'primevue/tag'
@@ -317,14 +286,8 @@ const chamada = ref<ChamadaData | null>(null)
 const loadingChamada = ref(false)
 const salvando = ref(false)
 const modoEdicao = ref(false)
-// Alunos que o professor já tocou explicitamente (clicou em presente/ausente)
-// Se a chamada for nova, começa vazio → cards ficam neutros (azul)
-// Se a chamada já existia, todos entram como tocados → mostram estado salvo
 const tocados = ref<Set<string>>(new Set())
 
-// Histórico
-const historicoVisivel = ref(false)
-const historicoTurmaId = ref<string>('')
 const historico = ref<HistoricoItem[]>([])
 const loadingHistorico = ref(false)
 const downloadingId = ref<string | null>(null)
@@ -337,10 +300,6 @@ const dataFormatada = computed(() => {
 const countPresentes = computed(() => chamada.value?.presencas.filter((p) => p.presente).length ?? 0)
 const countAusentes = computed(() => chamada.value?.presencas.filter((p) => !p.presente).length ?? 0)
 const temNeutros = computed(() => chamada.value?.presencas.some((p) => !esTocado(p.aluno_id)) ?? false)
-
-function iniciais(nome: string): string {
-  return nome.split(' ').filter(Boolean).slice(0, 2).map((n) => n[0].toUpperCase()).join('')
-}
 
 function formatarData(dataStr: string): string {
   return new Date(dataStr + 'T00:00:00').toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' })
@@ -358,10 +317,9 @@ async function carregarTurmas() {
   try {
     const { data } = await api.get<{ data: Turma[] }>('/api/turmas')
     turmas.value = data.data
-    // Auto-seleciona se só tem uma turma
     if (turmas.value.length === 1 && !turmaSelecionada.value) {
       turmaSelecionada.value = turmas.value[0].id
-      await carregarChamada()
+      await Promise.all([carregarChamada(), carregarHistorico()])
     }
   } catch (err) {
     console.error('Erro ao carregar turmas:', err)
@@ -382,7 +340,6 @@ async function carregarChamada() {
       params: { turma_id: turmaSelecionada.value, data: dataStr },
     })
     chamada.value = data.chamada
-    // Chamada já existia: marca todos como tocados para mostrar o estado salvo
     if (!data.chamada.novo) {
       tocados.value = new Set(data.chamada.presencas.map(p => p.aluno_id))
     }
@@ -410,12 +367,11 @@ async function salvarChamada() {
         presente: p.presente,
       })),
     })
-    // Atualiza o ID localmente (primeira vez que salva)
     chamada.value.id = data.id
-    // Após salvar, todos viram tocados para manter as cores
     tocados.value = new Set(chamada.value.presencas.map((p) => p.aluno_id))
     modoEdicao.value = false
     toast.add({ severity: 'success', summary: 'Chamada salva com sucesso!', life: 3000 })
+    await carregarHistorico()
   } catch {
     toast.add({ severity: 'error', summary: 'Erro ao salvar chamada', life: 3000 })
   } finally {
@@ -444,7 +400,7 @@ function marcarTodos(presente: boolean) {
 
 function onTurmaChange() {
   chamada.value = null
-  carregarChamada()
+  Promise.all([carregarChamada(), carregarHistorico()])
 }
 
 function onDataChange() {
@@ -452,20 +408,14 @@ function onDataChange() {
   if (turmaSelecionada.value) carregarChamada()
 }
 
-async function abrirHistorico() {
-  historicoVisivel.value = true
-  historicoTurmaId.value = turmaSelecionada.value
-  if (historicoTurmaId.value) await carregarHistorico()
-}
-
 async function carregarHistorico() {
-  if (!historicoTurmaId.value) return
+  if (!turmaSelecionada.value) return
   loadingHistorico.value = true
   try {
     const { data } = await api.get<{ historico: HistoricoItem[] }>('/api/chamadas/historico', {
-      params: { turma_id: historicoTurmaId.value },
+      params: { turma_id: turmaSelecionada.value },
     })
-    historico.value = data.historico
+    historico.value = data.historico.slice(0, 10)
   } catch {
     historico.value = []
   } finally {
@@ -497,6 +447,7 @@ onMounted(carregarTurmas)
 watch(turmaSelecionada, () => {
   chamada.value = null
   tocados.value = new Set()
+  historico.value = []
 })
 </script>
 
@@ -540,7 +491,8 @@ watch(turmaSelecionada, () => {
   min-height: 200px;
 }
 .loading-card i, .empty-card i { font-size: 2rem; opacity: 0.5; }
-.empty-card.small { min-height: 120px; padding: 1.5rem; }
+.loading-card.small, .empty-card.small { min-height: 100px; padding: 1.5rem; font-size: 0.875rem; }
+.loading-card.small i, .empty-card.small i { font-size: 1.5rem; }
 .empty-hint { font-size: 0.85rem; color: var(--text-3); margin: 0; }
 
 /* ── Chamada card ── */
@@ -637,7 +589,6 @@ watch(turmaSelecionada, () => {
   border: 2px solid var(--border);
   background: var(--bg-card);
 }
-/* avatar-initials now handled by AvatarInitials.vue component */
 .status-badge {
   position: absolute;
   bottom: 0;
@@ -666,10 +617,7 @@ watch(turmaSelecionada, () => {
 }
 
 /* Check buttons */
-.aluno-actions {
-  display: flex;
-  gap: 0.4rem;
-}
+.aluno-actions { display: flex; gap: 0.4rem; }
 .check-btn {
   width: 38px;
   height: 38px;
@@ -687,39 +635,13 @@ watch(turmaSelecionada, () => {
 .check-btn:hover:not(:disabled) { transform: scale(1.1); }
 .check-btn:disabled { cursor: not-allowed; opacity: 0.5; }
 
-.presente-btn {
-  background: var(--bg-card);
-  border-color: #4ade80;
-  color: #16a34a;
-}
-.presente-btn.active {
-  background: #22c55e;
-  border-color: #16a34a;
-  color: #fff;
-  box-shadow: 0 2px 8px #22c55e66;
-}
-.presente-btn:not(.active):hover:not(:disabled) {
-  background: #dcfce7;
-  border-color: #4ade80;
-  color: #16a34a;
-}
+.presente-btn { background: var(--bg-card); border-color: #4ade80; color: #16a34a; }
+.presente-btn.active { background: #22c55e; border-color: #16a34a; color: #fff; box-shadow: 0 2px 8px #22c55e66; }
+.presente-btn:not(.active):hover:not(:disabled) { background: #dcfce7; border-color: #4ade80; color: #16a34a; }
 
-.ausente-btn {
-  background: var(--bg-card);
-  border-color: #f87171;
-  color: #dc2626;
-}
-.ausente-btn.active {
-  background: #ef4444;
-  border-color: #dc2626;
-  color: #fff;
-  box-shadow: 0 2px 8px #ef444466;
-}
-.ausente-btn:not(.active):hover:not(:disabled) {
-  background: #fee2e2;
-  border-color: #f87171;
-  color: #dc2626;
-}
+.ausente-btn { background: var(--bg-card); border-color: #f87171; color: #dc2626; }
+.ausente-btn.active { background: #ef4444; border-color: #dc2626; color: #fff; box-shadow: 0 2px 8px #ef444466; }
+.ausente-btn:not(.active):hover:not(:disabled) { background: #fee2e2; border-color: #f87171; color: #dc2626; }
 
 /* Quick actions */
 .quick-actions {
@@ -730,9 +652,25 @@ watch(turmaSelecionada, () => {
   padding-top: 1rem;
 }
 
-/* ── Histórico dialog ── */
-.historico-controls {
-  margin-bottom: 1.25rem;
+/* ── Histórico section ── */
+.historico-section {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.historico-title {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-2);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: 'Nunito', sans-serif;
 }
 .historico-table { margin-top: 0; }
 </style>

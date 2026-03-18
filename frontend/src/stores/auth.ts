@@ -12,6 +12,7 @@ interface Professor {
   papel: 'professor' | 'coordenador'
   escola: string
   onboarding_concluido: boolean
+  avatar_id: number | null
 }
 
 export const useAuthStore = defineStore('auth', () => {

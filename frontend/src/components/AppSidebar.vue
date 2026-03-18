@@ -19,6 +19,7 @@
       >
         <img
           :src="teacherPhotoUrl"
+          :key="teacherPhotoUrl"
           :alt="authStore.professor?.nome ?? 'Professor'"
           @error="onImgError"
           ref="imgRef"
@@ -30,17 +31,24 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useAuthStore } from '@/stores/auth'
+import { getAvatarSrc } from '@/composables/useAvatars'
 
 const authStore = useAuthStore()
 const showInitials = ref(false)
 const imgRef = ref<HTMLImageElement | null>(null)
-const teacherPhotoUrl = '/teacher.jpg'
+
+const teacherPhotoUrl = computed(() => getAvatarSrc(authStore.professor?.avatar_id ?? null) ?? '/teacher.jpg')
 
 const initials = computed(() => {
   const nome = authStore.professor?.nome ?? ''
   return nome.split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase() || 'P'
+})
+
+watch(teacherPhotoUrl, () => {
+  showInitials.value = false
+  if (imgRef.value) imgRef.value.style.display = 'block'
 })
 
 function onImgError() {

@@ -11,6 +11,7 @@ declare module 'fastify' {
       papel: string
       escola: string
       onboarding_concluido: boolean
+      avatar_id: number | null
     }
   }
 }
@@ -34,7 +35,7 @@ export default fp(async function attachProfessorPlugin(fastify: FastifyInstance)
 
       const professor = await prisma.professor.findUnique({
         where: { supabase_user_id: userId },
-        select: { id: true, nome: true, email: true, papel: true, escola: true, onboarding_concluido: true },
+        select: { id: true, nome: true, email: true, papel: true, escola: true, onboarding_concluido: true, avatar_id: true },
       })
 
       if (!professor) {

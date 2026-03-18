@@ -68,6 +68,9 @@ model Professor {
 
   onboarding_concluido Boolean         @default(false)
 
+  avatar_id Int?
+  avatar    AvatarImagem? @relation(fields: [avatar_id], references: [id])
+
   turmas    Turma[]
   rascunhos RascunhoDocumento[]
   versoes   VersaoDocumento[]
@@ -118,7 +121,8 @@ model AvatarImagem {
   nome    String
   arquivo String
 
-  alunos Aluno[]
+  alunos      Aluno[]
+  professores Professor[]
 
   @@map("avatar_imagens")
 }

@@ -244,24 +244,25 @@ async function handleGoogle() {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.625rem;
+  gap: 0.75rem;
   width: 100%;
-  padding: 0.625rem 1rem;
-  border: 1px solid var(--border-hover);
+  padding: 0.75rem 1rem;
+  border: none;
   border-radius: 8px;
-  background: var(--bg-card);
-  font-size: 0.875rem;
+  background: #fff;
+  font-size: 0.9375rem;
   font-weight: 500;
-  color: var(--text-1);
+  color: #3c4043;
   cursor: pointer;
-  transition: background 0.15s, border-color 0.15s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3), 0 2px 8px rgba(0,0,0,0.15);
+  transition: box-shadow 0.15s, background 0.15s;
 }
 .google-btn:hover:not(:disabled) {
-  background: var(--bg-hover);
-  border-color: rgba(255,255,255,0.2);
+  background: #f8f8f8;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.35), 0 4px 12px rgba(0,0,0,0.2);
 }
 .google-btn:disabled {
-  opacity: 0.5;
+  opacity: 0.6;
   cursor: not-allowed;
 }
 
