@@ -3,6 +3,7 @@
     <!-- Logo -->
     <div class="sidebar-logo">
       <img src="@/assets/drawings/acaeLogo.png" alt="ACAE" class="logo-img" />
+      <span class="logo-text">ACAE</span>
     </div>
 
     <!-- Nav -->
@@ -109,6 +110,26 @@ const navItems = [
   height: 36px;
   width: auto;
   object-fit: contain;
+  flex-shrink: 0;
+}
+.logo-text {
+  font-family: 'Nunito', sans-serif;
+  font-size: 1.35rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  background: linear-gradient(
+    90deg,
+    #4A90E2 0%,
+    #F25C5C 33%,
+    #FFCC02 66%,
+    #3DC98A 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  margin-left: 0.625rem;
+  line-height: 1;
 }
 
 /* Nav */
